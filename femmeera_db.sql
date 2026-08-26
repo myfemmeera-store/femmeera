@@ -5,8 +5,6 @@
 -- ========================================================
 
 SET FOREIGN_KEY_CHECKS=0;
-CREATE DATABASE IF NOT EXISTS `femmeera_db`;
-USE `femmeera_db`;
 
 -- --------------------------------------------------------
 -- Table structure for `announcements`
