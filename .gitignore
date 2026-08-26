@@ -1,0 +1,9 @@
+.env
+.env.*
+rzp-key.csv
+*.csv
+node_modules/
+vendor/
+.next/
+.idea/
+.vscode/
