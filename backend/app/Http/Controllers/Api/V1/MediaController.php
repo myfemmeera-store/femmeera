@@ -17,7 +17,7 @@ class MediaController extends Controller
     {
         $request->validate([
             'file' => 'required|file|mimes:jpeg,png,jpg,webp,gif,svg,mp4,webm,ogg,mov,m4v,qt,avi,mkv|max:102400',
-            'folder' => 'nullable|string|in:products,categories,banners,cms,branding,reviews',
+            'folder' => 'nullable|string',
         ]);
 
         $folder = $request->input('folder', 'general');
