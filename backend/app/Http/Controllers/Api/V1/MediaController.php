@@ -28,9 +28,23 @@ class MediaController extends Controller
         $fileName = Str::uuid() . '.' . $extension;
         $path = "{$folder}/{$yearMonth}/{$fileName}";
 
-        // Save file explicitly to public storage disk so it is web accessible locally
         $disk = 'public';
         Storage::disk($disk)->putFileAs("{$folder}/{$yearMonth}", $file, $fileName);
+
+        // Ensure file & directory permissions are web-readable on Hostinger (0755 dirs, 0644 files)
+        $storagePath = storage_path("app/public/{$folder}/{$yearMonth}/{$fileName}");
+        $publicPath = public_path("storage/{$folder}/{$yearMonth}/{$fileName}");
+
+        if (file_exists($storagePath)) {
+            @chmod($storagePath, 0644);
+            @chmod(dirname($storagePath), 0755);
+            @chmod(dirname(dirname($storagePath)), 0755);
+        }
+        if (file_exists($publicPath)) {
+            @chmod($publicPath, 0644);
+            @chmod(dirname($publicPath), 0755);
+            @chmod(dirname(dirname($publicPath)), 0755);
+        }
 
         // Generate full web-accessible URL
         $url = asset('storage/' . $path);
