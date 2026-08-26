@@ -9,15 +9,27 @@ Route::get('/', function () {
     ]);
 });
 
-// Dynamic Storage Media File Server
+// Dynamic Storage Media File Server (Multi-location search for Hostinger compatibility)
 Route::get('/storage/{path}', function ($path) {
     try {
-        // Sanitize path to prevent directory traversal
         $cleanPath = ltrim(str_replace(['..', '\\'], ['', '/'], $path), '/');
-        $filePath = storage_path('app/public/' . $cleanPath);
+        
+        $possiblePaths = [
+            storage_path('app/public/' . $cleanPath),
+            public_path('storage/' . $cleanPath),
+            base_path('storage/app/public/' . $cleanPath),
+        ];
 
-        if (!file_exists($filePath) || !is_file($filePath)) {
-            return response()->json(['message' => 'File not found'], 404);
+        $filePath = null;
+        foreach ($possiblePaths as $p) {
+            if (file_exists($p) && is_file($p)) {
+                $filePath = $p;
+                break;
+            }
+        }
+
+        if (!$filePath) {
+            return response()->json(['message' => 'File not found: ' . $cleanPath], 404);
         }
 
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
