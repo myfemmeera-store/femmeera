@@ -5,8 +5,35 @@ import Link from 'next/link';
 import { cmsService, PublicReel } from '@/services/cmsService';
 import { Play, Sparkles, ChevronLeft, ChevronRight, ShoppingBag, ArrowRight, X, Volume2, VolumeX, Maximize2 } from 'lucide-react';
 
+const defaultFallbackReels: PublicReel[] = [
+  {
+    id: 101,
+    title: 'Festive Silk Lehenga Collection',
+    video_url: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-pink-outfit-41221-large.mp4',
+    product_url: '/women/traditional-wear',
+    button_text: 'View Product',
+    sort_order: 1,
+  },
+  {
+    id: 102,
+    title: 'Royal Ethnic Anarkali Suit Set',
+    video_url: 'https://assets.mixkit.co/videos/preview/mixkit-model-posing-in-a-fashion-photoshoot-41224-large.mp4',
+    product_url: '/women/traditional-wear',
+    button_text: 'View Product',
+    sort_order: 2,
+  },
+  {
+    id: 103,
+    title: 'Modern Western Couture Edit',
+    video_url: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-posing-for-a-camera-41222-large.mp4',
+    product_url: '/women/western-wear',
+    button_text: 'View Product',
+    sort_order: 3,
+  },
+];
+
 export const WatchAndShopSection: React.FC = () => {
-  const [reels, setReels] = useState<PublicReel[]>([]);
+  const [reels, setReels] = useState<PublicReel[]>(defaultFallbackReels);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Active Selected Reel Modal State
