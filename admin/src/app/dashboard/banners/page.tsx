@@ -76,11 +76,22 @@ export default function HeroBannersAdminPage() {
           promo_banner_fit: res.data.promo_banner_fit || 'cover',
         });
 
-        if (res.data.homepage_shop_categories && Array.isArray(res.data.homepage_shop_categories)) {
-          setShopCategories(res.data.homepage_shop_categories);
+        // Safely decode shop categories whether returned as string or array
+        let shopCat = res.data.homepage_shop_categories;
+        if (typeof shopCat === 'string') {
+          try { shopCat = JSON.parse(shopCat); } catch {}
         }
-        if (res.data.homepage_featured_collections && Array.isArray(res.data.homepage_featured_collections)) {
-          setFeaturedCollections(res.data.homepage_featured_collections);
+        if (Array.isArray(shopCat)) {
+          setShopCategories(shopCat);
+        }
+
+        // Safely decode featured collections whether returned as string or array
+        let featuredCol = res.data.homepage_featured_collections;
+        if (typeof featuredCol === 'string') {
+          try { featuredCol = JSON.parse(featuredCol); } catch {}
+        }
+        if (Array.isArray(featuredCol)) {
+          setFeaturedCollections(featuredCol);
         }
       }
     } catch (err) {

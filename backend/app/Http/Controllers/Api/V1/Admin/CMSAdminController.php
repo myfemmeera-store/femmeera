@@ -27,6 +27,20 @@ class CMSAdminController extends Controller
             $settings[$s->key_name] = $value;
         }
 
+        // Decode JSON settings for admin CMS loaders
+        if (isset($settings['homepage_shop_categories']) && is_string($settings['homepage_shop_categories'])) {
+            $decoded = json_decode($settings['homepage_shop_categories'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $settings['homepage_shop_categories'] = $decoded;
+            }
+        }
+        if (isset($settings['homepage_featured_collections']) && is_string($settings['homepage_featured_collections'])) {
+            $decoded = json_decode($settings['homepage_featured_collections'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $settings['homepage_featured_collections'] = $decoded;
+            }
+        }
+
         return response()->json([
             'success' => true,
             'data' => $settings,
