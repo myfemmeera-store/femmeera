@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { apiClient } from '@/services/apiClient';
 import { authService } from '@/services/authService';
 import { cartService } from '@/services/cartService';
 import { wishlistService } from '@/services/wishlistService';
@@ -99,11 +100,13 @@ export default function AccountPage() {
 
     // Counts
     setWishlistCount(wishlistService.getWishlist().length);
-    cartService.getCart().then(res => {
-      if (res.success && res.data) {
-        setOrderCount(res.data.items.length > 0 ? 1 : 0);
-      }
-    }).catch(() => {});
+    apiClient<any[]>('/customer/orders')
+      .then((res) => {
+        if (res.success && res.data && Array.isArray(res.data)) {
+          setOrderCount(res.data.length);
+        }
+      })
+      .catch(() => {});
 
   }, [router]);
 

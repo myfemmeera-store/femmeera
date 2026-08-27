@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Services\CartCheckoutService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -53,9 +54,9 @@ class CustomerOrderController extends Controller
     {
         $orders = $request->user()
             ->orders()
-            ->with('items')
+            ->with(['items.product.images', 'latestPayment', 'statusHistory'])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(20);
 
         return response()->json([
             'success' => true,
@@ -70,5 +71,29 @@ class CustomerOrderController extends Controller
                 ]
             ]
         ], 200);
+    }
+
+    /**
+     * GET /api/v1/orders/lookup/{orderNumber}
+     */
+    public function showByNumber(string $orderNumber): JsonResponse
+    {
+        $order = Order::where('order_number', $orderNumber)
+            ->orWhere('id', $orderNumber)
+            ->with(['items.product.images', 'latestPayment', 'statusHistory', 'user'])
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order details retrieved successfully.',
+            'data' => $order,
+        ]);
     }
 }

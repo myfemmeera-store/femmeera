@@ -72,7 +72,8 @@ Route::prefix('cart')->group(function () {
     Route::delete('/items/{id}', [CartController::class, 'removeItem']);
 });
 
-// Public Catalog & CMS APIs (No Authentication Required)
+// Public Catalog, Order Lookup & CMS APIs (No Authentication Required)
+Route::get('/orders/lookup/{orderNumber}', [\App\Http\Controllers\Api\V1\Customer\CustomerOrderController::class, 'showByNumber']);
 Route::get('/settings', [CMSPublicController::class, 'settings']);
 Route::get('/categories', [PublicCatalogController::class, 'categories']);
 Route::get('/products', [PublicCatalogController::class, 'products']);

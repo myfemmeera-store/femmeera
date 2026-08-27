@@ -202,10 +202,13 @@ export default function CheckoutPage() {
       }
 
       const createdOrder = orderRes.data.order;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('femmeera_last_order', createdOrder.order_number);
+      }
 
       // Handle Cash on Delivery
       if (paymentOption === 'COD') {
-        router.push(`/checkout/success?order_number=${createdOrder.order_number}&order_id=${createdOrder.id}`);
+        router.push(`/checkout/success?order_number=${createdOrder.order_number}&order_id=${createdOrder.id}&method=COD`);
         return;
       }
 
