@@ -10,7 +10,7 @@
 </p>
 
 <div style="text-align: center; margin: 30px 0;">
-    <a href="{{ $reset_link ?? 'http://localhost:3000/auth/reset-password' }}" class="btn">Reset Password</a>
+    <a href="{{ $reset_link ?? 'https://femmeera.com/login/reset-password' }}" class="btn">Reset Password</a>
 </div>
 
 <p class="paragraph" style="font-size: 12px; color: #7A7A7A;">

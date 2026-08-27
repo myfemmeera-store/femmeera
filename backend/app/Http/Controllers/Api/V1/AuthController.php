@@ -328,13 +328,13 @@ class AuthController extends Controller
     public function googleCallback(Request $request)
     {
         if ($request->has('error')) {
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000') . '/login?error=' . urlencode($request->input('error'));
+            $frontendUrl = env('FRONTEND_URL', 'https://femmeera.com') . '/login?error=' . urlencode($request->input('error'));
             return redirect()->away($frontendUrl);
         }
 
         $code = $request->input('code');
         if (!$code) {
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000') . '/login?error=missing_code';
+            $frontendUrl = env('FRONTEND_URL', 'https://femmeera.com') . '/login?error=missing_code';
             return redirect()->away($frontendUrl);
         }
 
@@ -345,11 +345,11 @@ class AuthController extends Controller
         if (isset($data['success']) && $data['success'] && isset($data['data']['token'])) {
             $token = $data['data']['token'];
             $userJson = urlencode(json_encode($data['data']['user']));
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000') . '/login/callback?token=' . $token . '&user=' . $userJson;
+            $frontendUrl = env('FRONTEND_URL', 'https://femmeera.com') . '/login/callback?token=' . $token . '&user=' . $userJson;
             return redirect()->away($frontendUrl);
         } else {
             $errMsg = $data['message'] ?? 'Google login failed';
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000') . '/login?error=' . urlencode($errMsg);
+            $frontendUrl = env('FRONTEND_URL', 'https://femmeera.com') . '/login?error=' . urlencode($errMsg);
             return redirect()->away($frontendUrl);
         }
     }

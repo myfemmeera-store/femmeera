@@ -17,6 +17,6 @@
 </div>
 
 <div style="text-align: center; margin: 25px 0;">
-    <a href="{{ $order['tracking_url'] ?? 'http://localhost:3000/account/orders' }}" class="btn">Track Package Live</a>
+    <a href="{{ $order['tracking_url'] ?? 'https://femmeera.com/account/orders' }}" class="btn">Track Package Live</a>
 </div>
 @endsection

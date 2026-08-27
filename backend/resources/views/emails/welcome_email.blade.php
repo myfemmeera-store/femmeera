@@ -9,8 +9,8 @@
     Explore our latest collections of Banarasi silk sarees, designer Kurti sets, handcrafted co-ords, and evening couture designed for elegance and distinction.
 </p>
 
-<div style="text-align: center; margin: 25px 0;">
-    <a href="http://localhost:3000/shop" class="btn">Explore Collections</a>
+<div style="text-align: center; margin: 30px 0;">
+    <a href="https://femmeera.com/shop" class="btn">Explore Collections</a>
 </div>
 
 <p class="paragraph" style="font-size: 12px; color: #7A7A7A; text-align: center;">
