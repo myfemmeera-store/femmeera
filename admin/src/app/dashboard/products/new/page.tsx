@@ -114,13 +114,25 @@ export default function AddProductPage() {
     const selectedFiles = Array.from(e.target.files);
 
     for (const file of selectedFiles) {
+      // Generate instant local browser preview blob URL
+      const localPreviewUrl = URL.createObjectURL(file);
+      setImages((prev) => [...prev, { url: localPreviewUrl, file }]);
+
       try {
         const res = await mediaService.uploadImage(file, 'products');
         if (res.success && res.data) {
-          setImages((prev) => [...prev, { url: res.data!.url, file }]);
+          const uploadedUrl = res.data.url;
+          // Update the local blob URL with the normalized server URL
+          setImages((prev) =>
+            prev.map((img) => (img.url === localPreviewUrl ? { ...img, url: uploadedUrl } : img))
+          );
+        } else {
+          showToast(res.message || 'Product image upload failed.', 'error');
+          setImages((prev) => prev.filter((img) => img.url !== localPreviewUrl));
         }
       } catch (err) {
         showToast('Product image upload failed.', 'error');
+        setImages((prev) => prev.filter((img) => img.url !== localPreviewUrl));
       }
     }
   };

@@ -117,19 +117,27 @@ export default function EditProductPage() {
     const selectedFiles = Array.from(e.target.files);
 
     setIsUploadingImage(true);
-    try {
-      for (const file of selectedFiles) {
+    for (const file of selectedFiles) {
+      const localPreviewUrl = URL.createObjectURL(file);
+      setProductImages((prev) => [...prev, localPreviewUrl]);
+
+      try {
         const res = await mediaService.uploadImage(file, 'products');
         if (res.success && res.data) {
-          setProductImages((prev) => [...prev, res.data!.url]);
+          const uploadedUrl = res.data.url;
+          setProductImages((prev) =>
+            prev.map((img) => (img === localPreviewUrl ? uploadedUrl : img))
+          );
+        } else {
+          showToast(res.message || 'Image upload failed.', 'error');
+          setProductImages((prev) => prev.filter((img) => img !== localPreviewUrl));
         }
+      } catch (err) {
+        showToast('Image upload failed.', 'error');
+        setProductImages((prev) => prev.filter((img) => img !== localPreviewUrl));
       }
-      showToast('Product photo uploaded successfully.', 'success');
-    } catch (err) {
-      showToast('Image upload failed.', 'error');
-    } finally {
-      setIsUploadingImage(false);
     }
+    setIsUploadingImage(false);
   };
 
   const removeImage = (index: number) => {
