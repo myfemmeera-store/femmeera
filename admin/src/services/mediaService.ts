@@ -14,7 +14,7 @@ export interface MediaUploadResponse {
 }
 
 export const mediaService = {
-  async uploadImage(file: File, folder: 'products' | 'categories' | 'banners' | 'cms' | 'branding' | 'general' = 'general'): Promise<MediaUploadResponse> {
+  async uploadImage(file: File, folder: 'products' | 'categories' | 'banners' | 'cms' | 'branding' | 'reels' | 'general' = 'general'): Promise<MediaUploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('folder', folder);
