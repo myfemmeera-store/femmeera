@@ -27,11 +27,11 @@
         @foreach($order['items'] ?? [] as $item)
         <tr>
             <td>
-                <strong>{{ $item['product_name'] ?? $item['name'] ?? 'Item' }}</strong><br>
-                <span style="font-size: 11px; color: #777;">Variant: {{ $item['color'] ?? 'Standard' }} / {{ $item['size'] ?? 'M' }}</span>
+                <strong>{{ $item['product_name_snapshot'] ?? $item['product_name'] ?? $item['name'] ?? 'Item' }}</strong><br>
+                <span style="font-size: 11px; color: #777;">Variant: {{ $item['color_snapshot'] ?? $item['color'] ?? 'Standard' }} / {{ $item['size_snapshot'] ?? $item['size'] ?? 'M' }}</span>
             </td>
             <td style="text-align: center;">{{ $item['quantity'] }}</td>
-            <td style="text-align: right;">₹{{ number_format($item['line_total'] ?? ($item['unit_price'] * $item['quantity']), 2) }}</td>
+            <td style="text-align: right;">₹{{ number_format($item['total_amount'] ?? $item['line_total'] ?? ($item['unit_price'] * $item['quantity']), 2) }}</td>
         </tr>
         @endforeach
     </tbody>
@@ -41,7 +41,7 @@
     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
         <tr>
             <td style="padding: 4px 0; color: #666;">Subtotal:</td>
-            <td style="padding: 4px 0; text-align: right; font-weight: bold; color: #333;">₹{{ number_format($order['subtotal'], 2) }}</td>
+            <td style="padding: 4px 0; text-align: right; font-weight: bold; color: #333;">₹{{ number_format($order['subtotal'] ?? 0, 2) }}</td>
         </tr>
         @if(($order['discount_amount'] ?? 0) > 0)
         <tr>
@@ -55,7 +55,7 @@
         </tr>
         <tr style="border-top: 1px solid #E0D4C0;">
             <td style="padding: 10px 0 0 0; font-size: 15px; font-weight: bold; color: #1A1A1A;">Total Amount:</td>
-            <td style="padding: 10px 0 0 0; text-align: right; font-size: 16px; font-weight: bold; color: #B38548;">₹{{ number_format($order['total'], 2) }}</td>
+            <td style="padding: 10px 0 0 0; text-align: right; font-size: 16px; font-weight: bold; color: #B38548;">₹{{ number_format($order['total_amount'] ?? $order['total'] ?? 0, 2) }}</td>
         </tr>
     </table>
     <p style="font-size: 10px; color: #888; margin: 6px 0 0 0; text-align: right;">(Inclusive of all taxes)</p>
@@ -63,13 +63,13 @@
 
 <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #1A1A1A; margin-top: 25px; margin-bottom: 10px;">Shipping Address</h3>
 <div style="background-color: #FDFBF7; border: 1px solid #EFE6D8; border-radius: 8px; padding: 12px; font-size: 13px; line-height: 1.5; color: #444;">
-    <strong>{{ $order['shipping_address']['name'] ?? 'Recipient' }}</strong><br>
-    {{ $order['shipping_address']['address'] ?? '' }} {{ $order['shipping_address']['address_line_2'] ?? '' }}<br>
-    {{ $order['shipping_address']['city'] ?? '' }}, {{ $order['shipping_address']['state'] ?? '' }} - {{ $order['shipping_address']['pincode'] ?? '' }}<br>
-    Phone: {{ $order['shipping_address']['phone'] ?? 'N/A' }}
+    <strong>{{ $order['shipping_address_snapshot']['name'] ?? $order['shipping_address']['name'] ?? 'Recipient' }}</strong><br>
+    {{ $order['shipping_address_snapshot']['address'] ?? $order['shipping_address']['address'] ?? '' }} {{ $order['shipping_address_snapshot']['address_line_2'] ?? '' }}<br>
+    {{ $order['shipping_address_snapshot']['city'] ?? $order['shipping_address']['city'] ?? '' }}, {{ $order['shipping_address_snapshot']['state'] ?? $order['shipping_address']['state'] ?? '' }} - {{ $order['shipping_address_snapshot']['pincode'] ?? $order['shipping_address']['pincode'] ?? '' }}<br>
+    Phone: {{ $order['shipping_address_snapshot']['phone'] ?? $order['shipping_address']['phone'] ?? 'N/A' }}
 </div>
 
 <div style="text-align: center; margin-top: 25px;">
-    <a href="http://localhost:3000/account/orders" class="btn">View Order Details</a>
+    <a href="https://femmeera.com/account/orders" class="btn">View Order Details</a>
 </div>
 @endsection

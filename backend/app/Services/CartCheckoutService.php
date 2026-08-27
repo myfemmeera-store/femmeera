@@ -209,6 +209,33 @@ class CartCheckoutService
                 'created_at' => now(),
             ]);
 
+            // 10. Queue Customer & Admin Order Confirmation Emails
+            try {
+                $freshOrder = $order->fresh(['items']);
+                $orderData = $freshOrder ? $freshOrder->toArray() : $order->toArray();
+                $custEmail = $shippingAddress['email'] ?? $user->email ?? '';
+                $custName = $shippingAddress['name'] ?? $user->name ?? 'Valued Customer';
+
+                if (!empty($custEmail)) {
+                    \App\Jobs\SendEmailNotificationJob::dispatch(
+                        'order_confirmation',
+                        $custEmail,
+                        $custName,
+                        ['order' => $orderData, 'customer_name' => $custName]
+                    );
+                }
+
+                $adminEmail = env('ADMIN_NOTIFICATION_EMAIL', env('MAIL_FROM_ADDRESS', 'myfemmeera@gmail.com'));
+                \App\Jobs\SendEmailNotificationJob::dispatch(
+                    'admin_new_order',
+                    $adminEmail,
+                    'Admin Concierge',
+                    ['order' => $orderData]
+                );
+            } catch (\Throwable $ex) {
+                \Illuminate\Support\Facades\Log::warning('CartCheckoutService: Email dispatch failed: ' . $ex->getMessage());
+            }
+
             return $order->load(['items', 'latestPayment', 'statusHistory']);
         });
     }
