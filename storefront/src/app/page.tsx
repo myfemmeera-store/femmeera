@@ -9,6 +9,7 @@ import { HeroSlider } from '@/components/home/HeroSlider';
 import { PromoPopupModal } from '@/components/home/PromoPopupModal';
 import { WatchAndShopSection } from '@/components/home/WatchAndShopSection';
 import { TestimonialsSection } from '@/components/home/TestimonialsSection';
+import { AddToCartButton } from '@/components/ui/AddToCartButton';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -282,9 +283,12 @@ export default async function HomePage() {
                   <h3 className="font-serif text-xs text-neutral-900 font-medium line-clamp-1 group-hover:text-[#B38548] transition-colors">
                     {item.name}
                   </h3>
-                  <p className="font-sans font-bold text-xs text-neutral-900 mt-1">
-                    ₹{Number(price).toLocaleString('en-IN')}
-                  </p>
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#EFE6D8]/60">
+                    <p className="font-sans font-bold text-xs text-neutral-900">
+                      ₹{Number(price).toLocaleString('en-IN')}
+                    </p>
+                    <AddToCartButton variantId={variant?.id || item.id} compact />
+                  </div>
                 </div>
               </Link>
             );
@@ -420,15 +424,18 @@ export default async function HomePage() {
                   <h3 className="font-serif text-xs text-neutral-900 font-medium line-clamp-1 group-hover:text-[#B38548] transition-colors">
                     {item.name}
                   </h3>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className="font-sans font-bold text-xs text-neutral-900">
-                      ₹{Number(price).toLocaleString('en-IN')}
-                    </span>
-                    {mrp && mrp > price && (
-                      <span className="font-sans text-[11px] text-neutral-400 line-through">
-                        ₹{Number(mrp).toLocaleString('en-IN')}
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#EFE6D8]/60">
+                    <div className="flex items-baseline space-x-1.5">
+                      <span className="font-sans font-bold text-xs text-neutral-900">
+                        ₹{Number(price).toLocaleString('en-IN')}
                       </span>
-                    )}
+                      {mrp && mrp > price && (
+                        <span className="font-sans text-[10px] text-neutral-400 line-through">
+                          ₹{Number(mrp).toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
+                    <AddToCartButton variantId={variant?.id || item.id} compact />
                   </div>
                 </div>
               </Link>
@@ -507,15 +514,18 @@ export default async function HomePage() {
                   <h3 className="font-serif text-xs text-neutral-900 font-medium line-clamp-1 group-hover:text-[#B38548] transition-colors">
                     {item.name}
                   </h3>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className="font-sans font-bold text-xs text-neutral-900">
-                      ₹{Number(price).toLocaleString('en-IN')}
-                    </span>
-                    {mrp && mrp > price && (
-                      <span className="font-sans text-[11px] text-neutral-400 line-through">
-                        ₹{Number(mrp).toLocaleString('en-IN')}
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#EFE6D8]/60">
+                    <div className="flex items-baseline space-x-1.5">
+                      <span className="font-sans font-bold text-xs text-neutral-900">
+                        ₹{Number(price).toLocaleString('en-IN')}
                       </span>
-                    )}
+                      {mrp && mrp > price && (
+                        <span className="font-sans text-[10px] text-neutral-400 line-through">
+                          ₹{Number(mrp).toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
+                    <AddToCartButton variantId={variant?.id || item.id} compact />
                   </div>
                 </div>
               </Link>
