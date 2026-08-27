@@ -36,6 +36,14 @@ class CMSPublicController extends Controller
         $settings['promo_banner_url'] = $settings['promo_banner_url'] ?? '/women/western-wear';
         $settings['promo_banner_status'] = $settings['promo_banner_status'] ?? 'ACTIVE';
 
+        // Parse JSON settings for homepage shop categories & featured collections
+        if (isset($settings['homepage_shop_categories']) && is_string($settings['homepage_shop_categories'])) {
+            $settings['homepage_shop_categories'] = json_decode($settings['homepage_shop_categories'], true);
+        }
+        if (isset($settings['homepage_featured_collections']) && is_string($settings['homepage_featured_collections'])) {
+            $settings['homepage_featured_collections'] = json_decode($settings['homepage_featured_collections'], true);
+        }
+
         return response()->json([
             'success' => true,
             'data' => $settings,

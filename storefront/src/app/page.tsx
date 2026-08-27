@@ -142,8 +142,8 @@ export default async function HomePage() {
   const rawWestern = westernRes.data || [];
   const displayWestern = rawWestern.length > 0 ? rawWestern.slice(0, 6) : defaultWesternWear;
 
-  // 6 Circular Shop By Category items matching reference image
-  const shopCategories = [
+  // Dynamic Shop By Category items from CMS Settings or default fallbacks
+  const defaultShopCategories = [
     {
       name: 'SAREES',
       subtitle: 'Grace in every drape',
@@ -182,8 +182,12 @@ export default async function HomePage() {
     },
   ];
 
-  // 4 Featured Collections Cards
-  const featuredCollections = [
+  const shopCategories = Array.isArray(settings.homepage_shop_categories) && settings.homepage_shop_categories.length > 0
+    ? settings.homepage_shop_categories
+    : defaultShopCategories;
+
+  // Dynamic Featured Collections Cards from CMS Settings or default fallbacks
+  const defaultFeaturedCollections = [
     {
       title: 'ROYAL TRADITIONAL WEAR',
       subtitle: 'Handcrafted Sarees, Lehengas & Anarkali Suits',
@@ -209,6 +213,10 @@ export default async function HomePage() {
       link: '/women/western-wear',
     },
   ];
+
+  const featuredCollections = Array.isArray(settings.homepage_featured_collections) && settings.homepage_featured_collections.length > 0
+    ? settings.homepage_featured_collections
+    : defaultFeaturedCollections;
 
   // Testimonials matching reference image
   const testimonials = [

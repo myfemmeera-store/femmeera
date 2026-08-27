@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Plus, Edit3, Trash2, Upload, RefreshCw, CheckCircle, AlertCircle, ArrowRight, Eye, X } from 'lucide-react';
+import { Plus, Edit3, Trash2, Upload, RefreshCw, CheckCircle, AlertCircle, ArrowRight, Eye, X, Image as ImageIcon } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -32,10 +32,30 @@ export default function HeroBannersAdminPage() {
     promo_banner_status: 'ACTIVE',
   });
 
+  // Shop By Category State
+  const [shopCategories, setShopCategories] = useState<any[]>([
+    { name: 'SAREES', subtitle: 'Grace in every drape', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop', slug: 'traditional-wear' },
+    { name: 'SUITS', subtitle: 'Elegance redefined', image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&w=600&auto=format&fit=crop', slug: 'traditional-wear' },
+    { name: 'LEHENGAS', subtitle: 'Royal celebration wear', image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=600&auto=format&fit=crop', slug: 'traditional-wear' },
+    { name: 'KURTIS', subtitle: 'Everyday traditional comfort', image: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop', slug: 'traditional-wear' },
+    { name: 'WESTERN DRESSES', subtitle: 'Chic modern trends', image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop', slug: 'western-wear' },
+    { name: 'CO-ORD SETS', subtitle: 'Effortless style', image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=600&auto=format&fit=crop', slug: 'western-wear' },
+  ]);
+
+  // Featured Collections State
+  const [featuredCollections, setFeaturedCollections] = useState<any[]>([
+    { title: 'ROYAL TRADITIONAL WEAR', subtitle: 'Handcrafted Sarees, Lehengas & Anarkali Suits', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop', link: '/women/traditional-wear' },
+    { title: 'CHIC WESTERN TRENDS', subtitle: 'Co-ords, Gowns, Dresses & Partywear', image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop', link: '/women/western-wear' },
+    { title: 'FESTIVE SILKS', subtitle: 'Timeless Silk Sarees for Special Moments', image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=800&auto=format&fit=crop', link: '/women/traditional-wear' },
+    { title: 'ELEGANT EVENINGWEAR', subtitle: 'Statement Gowns & Luxe Cocktail Outfits', image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=800&auto=format&fit=crop', link: '/women/western-wear' },
+  ]);
+
   const [isUploadingDesktop, setIsUploadingDesktop] = useState(false);
   const [isUploadingMobile, setIsUploadingMobile] = useState(false);
   const [isUploadingPromo, setIsUploadingPromo] = useState(false);
   const [isSavingPromo, setIsSavingPromo] = useState(false);
+  const [isSavingShopCat, setIsSavingShopCat] = useState(false);
+  const [isSavingFeatured, setIsSavingFeatured] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -53,6 +73,13 @@ export default function HeroBannersAdminPage() {
           promo_banner_url: res.data.promo_banner_url || '/women/western-wear',
           promo_banner_status: res.data.promo_banner_status || 'ACTIVE',
         });
+
+        if (res.data.homepage_shop_categories && Array.isArray(res.data.homepage_shop_categories)) {
+          setShopCategories(res.data.homepage_shop_categories);
+        }
+        if (res.data.homepage_featured_collections && Array.isArray(res.data.homepage_featured_collections)) {
+          setFeaturedCollections(res.data.homepage_featured_collections);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -74,6 +101,38 @@ export default function HeroBannersAdminPage() {
     }
   };
 
+  const handleSaveShopCategories = async () => {
+    setIsSavingShopCat(true);
+    try {
+      const res = await cmsService.updateSettings({
+        homepage_shop_categories: JSON.stringify(shopCategories),
+      });
+      if (res.success) {
+        setMessage({ type: 'success', text: 'Shop By Category section updated successfully!' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Failed to update Shop By Category' });
+    } finally {
+      setIsSavingShopCat(false);
+    }
+  };
+
+  const handleSaveFeaturedCollections = async () => {
+    setIsSavingFeatured(true);
+    try {
+      const res = await cmsService.updateSettings({
+        homepage_featured_collections: JSON.stringify(featuredCollections),
+      });
+      if (res.success) {
+        setMessage({ type: 'success', text: 'Featured Collections section updated successfully!' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Failed to update Featured Collections' });
+    } finally {
+      setIsSavingFeatured(false);
+    }
+  };
+
   const handlePromoImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -88,6 +147,38 @@ export default function HeroBannersAdminPage() {
       alert('Promotional image upload failed');
     } finally {
       setIsUploadingPromo(false);
+    }
+  };
+
+  const handleShopCatImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const res = await mediaService.uploadImage(file, 'categories');
+      if (res.success && res.data) {
+        const updated = [...shopCategories];
+        updated[index].image = res.data.url;
+        setShopCategories(updated);
+      }
+    } catch (err) {
+      alert('Image upload failed');
+    }
+  };
+
+  const handleFeaturedImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const res = await mediaService.uploadImage(file, 'banners');
+      if (res.success && res.data) {
+        const updated = [...featuredCollections];
+        updated[index].image = res.data.url;
+        setFeaturedCollections(updated);
+      }
+    } catch (err) {
+      alert('Image upload failed');
     }
   };
 
@@ -209,10 +300,10 @@ export default function HeroBannersAdminPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-            Homepage Hero Banners & Slider
+            Homepage Banners & Section CMS
           </h1>
           <p className="text-xs text-neutral-500">
-            Manage 100% full-width auto-scrolling hero banners and mobile optimized images
+            Manage 100% full-width hero banners, circular Shop by Category cards, and Featured Collection cards
           </p>
         </div>
 
@@ -236,7 +327,7 @@ export default function HeroBannersAdminPage() {
         </div>
       )}
 
-      {/* Configured Banners List */}
+      {/* Configured Hero Banners List */}
       <Card title="Active & Configured Hero Slides">
         {isLoading ? (
           <div className="flex items-center justify-center p-12">
@@ -297,7 +388,228 @@ export default function HeroBannersAdminPage() {
         )}
       </Card>
 
-      {/* Mid-Page Promotional Banner Settings Card */}
+      {/* SECTION 2: SHOP BY CATEGORY (CIRCULAR CARDS) MANAGER */}
+      <Card title="Manage 'Shop By Category' Section" subtitle="Edit titles, subtitles, images, and category links for the circular homepage cards">
+        <div className="p-4 space-y-6 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {shopCategories.map((cat, idx) => (
+              <div key={idx} className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl space-y-3 relative">
+                <div className="flex items-center space-x-3">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border border-neutral-300 shrink-0 bg-neutral-200">
+                    <Image src={cat.image} alt={cat.name} fill className="object-cover" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <label className="font-bold text-neutral-800 block text-[10px] uppercase">Title</label>
+                    <input
+                      type="text"
+                      value={cat.name}
+                      onChange={(e) => {
+                        const updated = [...shopCategories];
+                        updated[idx].name = e.target.value;
+                        setShopCategories(updated);
+                      }}
+                      className="w-full px-2.5 py-1.5 border border-neutral-300 rounded-lg text-xs font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-neutral-700 block text-[10px]">Subtitle / Tagline</label>
+                  <input
+                    type="text"
+                    value={cat.subtitle}
+                    onChange={(e) => {
+                      const updated = [...shopCategories];
+                      updated[idx].subtitle = e.target.value;
+                      setShopCategories(updated);
+                    }}
+                    className="w-full px-2.5 py-1.5 border border-neutral-300 rounded-lg text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-neutral-700 block text-[10px]">Category Slug / Link</label>
+                  <input
+                    type="text"
+                    value={cat.slug}
+                    onChange={(e) => {
+                      const updated = [...shopCategories];
+                      updated[idx].slug = e.target.value;
+                      setShopCategories(updated);
+                    }}
+                    className="w-full px-2.5 py-1.5 border border-neutral-300 rounded-lg text-xs font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-neutral-700 block text-[10px]">Image URL or Upload</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={cat.image}
+                      onChange={(e) => {
+                        const updated = [...shopCategories];
+                        updated[idx].image = e.target.value;
+                        setShopCategories(updated);
+                      }}
+                      className="flex-1 px-2.5 py-1.5 border border-neutral-300 rounded-lg text-[10px] font-mono"
+                    />
+                    <label className="cursor-pointer px-2.5 py-1.5 bg-white hover:bg-neutral-100 border rounded-lg font-bold text-[10px] shrink-0">
+                      Upload
+                      <input type="file" accept="image/*" onChange={(e) => handleShopCatImageUpload(idx, e)} className="hidden" />
+                    </label>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = shopCategories.filter((_, i) => i !== idx);
+                    setShopCategories(updated);
+                  }}
+                  className="absolute top-2 right-2 p-1 text-neutral-400 hover:text-rose-600 rounded-full"
+                  title="Remove Item"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t">
+            <button
+              type="button"
+              onClick={() => {
+                setShopCategories([
+                  ...shopCategories,
+                  { name: 'NEW CATEGORY', subtitle: 'Collection tagline', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop', slug: 'traditional-wear' },
+                ]);
+              }}
+              className="px-3.5 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold rounded-xl flex items-center space-x-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Category Card</span>
+            </button>
+
+            <Button onClick={handleSaveShopCategories} disabled={isSavingShopCat}>
+              {isSavingShopCat ? 'Saving Categories...' : 'Save Shop By Category Section'}
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* SECTION 3: FEATURED COLLECTIONS MANAGER */}
+      <Card title="Manage 'Featured Collections' Section" subtitle="Edit titles, descriptions, images, and links for the rectangular collection cards">
+        <div className="p-4 space-y-6 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {featuredCollections.map((col, idx) => (
+              <div key={idx} className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl space-y-3 relative flex gap-4">
+                <div className="relative w-28 h-36 bg-neutral-200 rounded-xl overflow-hidden shrink-0 border">
+                  <Image src={col.image} alt={col.title} fill className="object-cover" />
+                </div>
+
+                <div className="flex-1 space-y-2">
+                  <div>
+                    <label className="font-bold text-neutral-800 block text-[10px] uppercase">Title</label>
+                    <input
+                      type="text"
+                      value={col.title}
+                      onChange={(e) => {
+                        const updated = [...featuredCollections];
+                        updated[idx].title = e.target.value;
+                        setFeaturedCollections(updated);
+                      }}
+                      className="w-full px-2.5 py-1.5 border border-neutral-300 rounded-lg text-xs font-bold uppercase"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-neutral-700 block text-[10px]">Subtitle</label>
+                    <input
+                      type="text"
+                      value={col.subtitle}
+                      onChange={(e) => {
+                        const updated = [...featuredCollections];
+                        updated[idx].subtitle = e.target.value;
+                        setFeaturedCollections(updated);
+                      }}
+                      className="w-full px-2.5 py-1.5 border border-neutral-300 rounded-lg text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-neutral-700 block text-[10px]">Redirect Link URL</label>
+                    <input
+                      type="text"
+                      value={col.link}
+                      onChange={(e) => {
+                        const updated = [...featuredCollections];
+                        updated[idx].link = e.target.value;
+                        setFeaturedCollections(updated);
+                      }}
+                      className="w-full px-2.5 py-1.5 border border-neutral-300 rounded-lg text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-neutral-700 block text-[10px]">Image URL or Upload</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={col.image}
+                        onChange={(e) => {
+                          const updated = [...featuredCollections];
+                          updated[idx].image = e.target.value;
+                          setFeaturedCollections(updated);
+                        }}
+                        className="flex-1 px-2 py-1 border border-neutral-300 rounded-lg text-[10px] font-mono"
+                      />
+                      <label className="cursor-pointer px-2 py-1 bg-white hover:bg-neutral-100 border rounded-lg font-bold text-[10px] shrink-0">
+                        Upload
+                        <input type="file" accept="image/*" onChange={(e) => handleFeaturedImageUpload(idx, e)} className="hidden" />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = featuredCollections.filter((_, i) => i !== idx);
+                    setFeaturedCollections(updated);
+                  }}
+                  className="absolute top-2 right-2 p-1 text-neutral-400 hover:text-rose-600 rounded-full"
+                  title="Remove Card"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t">
+            <button
+              type="button"
+              onClick={() => {
+                setFeaturedCollections([
+                  ...featuredCollections,
+                  { title: 'NEW COLLECTION', subtitle: 'Collection description', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop', link: '/women/traditional-wear' },
+                ]);
+              }}
+              className="px-3.5 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold rounded-xl flex items-center space-x-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Collection Card</span>
+            </button>
+
+            <Button onClick={handleSaveFeaturedCollections} disabled={isSavingFeatured}>
+              {isSavingFeatured ? 'Saving Featured Collections...' : 'Save Featured Collections Section'}
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* SECTION 4: MID-PAGE PROMOTIONAL BANNER */}
       <Card title="Featured Mid-Page Promotional Banner" subtitle="Control image and click-through redirect URL for 'Unlock the world of fashion' banner">
         <form onSubmit={handleSavePromo} className="p-4 space-y-4 text-xs">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
