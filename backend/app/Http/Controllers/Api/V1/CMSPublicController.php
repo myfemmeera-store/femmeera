@@ -35,6 +35,7 @@ class CMSPublicController extends Controller
         $settings['promo_banner_image'] = $settings['promo_banner_image'] ?? '/images/unlock_world_fashion_banner.jpg';
         $settings['promo_banner_url'] = $settings['promo_banner_url'] ?? '/women/western-wear';
         $settings['promo_banner_status'] = $settings['promo_banner_status'] ?? 'ACTIVE';
+        $settings['promo_banner_fit'] = $settings['promo_banner_fit'] ?? 'cover';
 
         // Parse JSON settings for homepage shop categories & featured collections
         if (isset($settings['homepage_shop_categories']) && is_string($settings['homepage_shop_categories'])) {
