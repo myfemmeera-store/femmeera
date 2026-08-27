@@ -442,6 +442,24 @@ export default function HeroBannersAdminPage() {
                 </div>
 
                 <div className="space-y-1">
+                  <label className="font-bold text-neutral-700 block text-[10px]">Image Framing / Fit in Frame</label>
+                  <select
+                    value={cat.fit || 'cover'}
+                    onChange={(e) => {
+                      const updated = [...shopCategories];
+                      updated[idx].fit = e.target.value;
+                      setShopCategories(updated);
+                    }}
+                    className="w-full px-2.5 py-1.5 border border-neutral-300 rounded-lg text-xs font-bold bg-white"
+                  >
+                    <option value="cover">Fill Frame (Standard Crop)</option>
+                    <option value="contain">Fit Entire Image (No Crop)</option>
+                    <option value="top">Top Focus (Show Upper Body / Face)</option>
+                    <option value="bottom">Bottom Focus (Show Dress Hem)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
                   <label className="font-bold text-neutral-700 block text-[10px]">Image URL or Upload</label>
                   <div className="flex items-center gap-2">
                     <input
@@ -482,7 +500,7 @@ export default function HeroBannersAdminPage() {
               onClick={() => {
                 setShopCategories([
                   ...shopCategories,
-                  { name: 'NEW CATEGORY', subtitle: 'Collection tagline', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop', slug: 'traditional-wear' },
+                  { name: 'NEW CATEGORY', subtitle: 'Collection tagline', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop', slug: 'traditional-wear', fit: 'cover' },
                 ]);
               }}
               className="px-3.5 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold rounded-xl flex items-center space-x-1.5"
@@ -499,13 +517,26 @@ export default function HeroBannersAdminPage() {
       </Card>
 
       {/* SECTION 3: FEATURED COLLECTIONS MANAGER */}
-      <Card title="Manage 'Featured Collections' Section" subtitle="Edit titles, descriptions, images, and links for the rectangular collection cards">
+      <Card title="Manage 'Featured Collections' Section" subtitle="Edit titles, descriptions, images, framing options, and links for the rectangular collection cards">
         <div className="p-4 space-y-6 text-xs">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {featuredCollections.map((col, idx) => (
               <div key={idx} className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl space-y-3 relative flex gap-4">
-                <div className="relative w-28 h-36 bg-neutral-200 rounded-xl overflow-hidden shrink-0 border">
-                  <Image src={col.image} alt={col.title} fill className="object-cover" />
+                <div className="relative w-28 h-40 bg-neutral-900 rounded-xl overflow-hidden shrink-0 border">
+                  <Image
+                    src={col.image}
+                    alt={col.title}
+                    fill
+                    className={
+                      col.fit === 'contain'
+                        ? 'object-contain p-1 bg-neutral-900'
+                        : col.fit === 'top'
+                        ? 'object-cover object-top'
+                        : col.fit === 'bottom'
+                        ? 'object-cover object-bottom'
+                        : 'object-cover'
+                    }
+                  />
                 </div>
 
                 <div className="flex-1 space-y-2">
@@ -549,6 +580,24 @@ export default function HeroBannersAdminPage() {
                       }}
                       className="w-full px-2.5 py-1.5 border border-neutral-300 rounded-lg text-xs font-mono"
                     />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-neutral-700 block text-[10px]">Image Framing / Fit in Frame</label>
+                    <select
+                      value={col.fit || 'cover'}
+                      onChange={(e) => {
+                        const updated = [...featuredCollections];
+                        updated[idx].fit = e.target.value;
+                        setFeaturedCollections(updated);
+                      }}
+                      className="w-full px-2.5 py-1.5 border border-neutral-300 rounded-lg text-xs font-bold bg-white"
+                    >
+                      <option value="cover">Fill Frame (Standard Crop)</option>
+                      <option value="contain">Fit Entire Image (No Crop)</option>
+                      <option value="top">Top Focus (Show Upper Body / Face)</option>
+                      <option value="bottom">Bottom Focus (Show Dress Hem)</option>
+                    </select>
                   </div>
 
                   <div>

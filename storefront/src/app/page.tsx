@@ -324,12 +324,20 @@ export default async function HomePage() {
               href={`/women/${cat.slug}`}
               className="group flex flex-col items-center space-y-3 shrink-0 snap-center w-28 sm:w-auto"
             >
-              <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden border-2 border-[#EFE6D8] group-hover:border-[#B38548] transition-all shadow-xs group-hover:shadow-md">
+              <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden border-2 border-[#EFE6D8] group-hover:border-[#B38548] transition-all shadow-xs group-hover:shadow-md bg-neutral-100">
                 <Image
                   src={cat.image}
                   alt={cat.name}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  className={`transition-transform duration-500 group-hover:scale-110 ${
+                    cat.fit === 'contain'
+                      ? 'object-contain p-2 bg-neutral-50'
+                      : cat.fit === 'top'
+                      ? 'object-cover object-top'
+                      : cat.fit === 'bottom'
+                      ? 'object-cover object-bottom'
+                      : 'object-cover'
+                  }`}
                 />
               </div>
               <div className="text-center">
@@ -353,12 +361,20 @@ export default async function HomePage() {
 
         <div className="flex md:grid md:grid-cols-4 gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory px-4 -mx-4 sm:px-0 sm:mx-0">
           {featuredCollections.map((col, idx) => (
-            <div key={idx} className="relative h-72 sm:h-80 rounded-2xl overflow-hidden group shadow-xs shrink-0 snap-center w-72 sm:w-auto">
+            <div key={idx} className="relative h-72 sm:h-80 rounded-2xl overflow-hidden group shadow-xs shrink-0 snap-center w-72 sm:w-auto bg-neutral-900">
               <Image
                 src={col.image}
                 alt={col.title}
                 fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                className={`transition-transform duration-700 group-hover:scale-105 ${
+                  col.fit === 'contain'
+                    ? 'object-contain bg-neutral-900'
+                    : col.fit === 'top'
+                    ? 'object-cover object-top'
+                    : col.fit === 'bottom'
+                    ? 'object-cover object-bottom'
+                    : 'object-cover'
+                }`}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-6 flex flex-col justify-end text-white">
                 <h3 className="font-sans font-bold text-sm tracking-wider uppercase mb-1">
