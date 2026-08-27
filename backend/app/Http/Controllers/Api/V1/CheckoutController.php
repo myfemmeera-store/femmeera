@@ -114,6 +114,7 @@ class CheckoutController extends Controller
             ],
             'shipping_method_id' => $request->input('shipping_method_id'),
             'coupon_code' => $request->input('coupon_code'),
+            'payment_method' => $request->input('payment_method', 'COD'),
         ];
 
         $order = $this->cartCheckoutService->checkout($user, $payload);

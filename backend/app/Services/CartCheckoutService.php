@@ -176,7 +176,19 @@ class CartCheckoutService
                 $this->inventoryService->reserveStock($itemData['variant_id'], $itemData['quantity'], $orderNumber);
             }
 
-            // 7. Record Coupon Usage if coupon applied
+            // 7. Record Payment details (COD / Pending)
+            $payMethod = strtoupper($checkoutData['payment_method'] ?? 'COD');
+            \App\Models\Payment::create([
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+                'payment_method' => $payMethod,
+                'provider' => $payMethod,
+                'amount' => $totalAmount,
+                'currency' => 'INR',
+                'status' => $payMethod === 'COD' ? 'PENDING' : 'INITIATED',
+            ]);
+
+            // 8. Record Coupon Usage if coupon applied
             if (!empty($discountCalc['applied_coupon'])) {
                 $this->couponService->recordUsage($discountCalc['applied_coupon']['id'], $user->id, $order->id);
             }
@@ -197,7 +209,7 @@ class CartCheckoutService
                 'created_at' => now(),
             ]);
 
-            return $order->load(['items', 'statusHistory']);
+            return $order->load(['items', 'latestPayment', 'statusHistory']);
         });
     }
 }
