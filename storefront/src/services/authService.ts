@@ -97,5 +97,24 @@ export const authService = {
   getStoredToken(): string | null {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem('femmeera_customer_token');
-  }
+  },
+
+  async forgotPassword(email: string): Promise<ApiResponse<any>> {
+    return apiClient<any>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email: email.trim() }),
+    });
+  },
+
+  async resetPassword(data: { email: string; token: string; password: string; password_confirmation: string }): Promise<ApiResponse<any>> {
+    return apiClient<any>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: data.email.trim(),
+        token: data.token,
+        password: data.password,
+        password_confirmation: data.password_confirmation,
+      }),
+    });
+  },
 };

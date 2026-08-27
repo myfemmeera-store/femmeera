@@ -92,23 +92,41 @@ class AuthController extends Controller
     }
 
     /**
+    /**
      * Request Password Reset Link
      */
-    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    public function forgotPassword(Request $request): JsonResponse
     {
-        $email = strtolower($request->input('email'));
-        $user = User::where('email', $email)->first();
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $email = strtolower(trim($request->input('email')));
+        $user = \App\Models\User::where('email', $email)->first();
 
         if ($user) {
             try {
-                $token = \Illuminate\Support\Str::random(60);
+                $token = \Illuminate\Support\Str::random(64);
+                
+                \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
+                    ['email' => $email],
+                    [
+                        'token' => \Illuminate\Support\Facades\Hash::make($token),
+                        'created_at' => now(),
+                    ]
+                );
+
+                $frontendUrl = env('FRONTEND_URL', 'https://femmeera.com');
+                $resetLink = "{$frontendUrl}/login/reset-password?token={$token}&email=" . urlencode($user->email);
+
                 \App\Jobs\SendEmailNotificationJob::dispatch(
                     'password_reset',
                     $user->email,
                     $user->name,
                     [
                         'customer_name' => $user->name,
-                        'reset_link' => "http://localhost:3000/auth/reset-password?token={$token}&email=" . urlencode($user->email),
+                        'reset_link' => $resetLink,
+                        'email' => $user->email,
                     ]
                 );
             } catch (\Throwable $e) {
@@ -118,18 +136,67 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Password reset request received. If registered, a reset link has been dispatched.',
+            'message' => 'If your email is registered, a password reset link has been sent to your inbox.',
         ], 200);
     }
 
     /**
-     * Reset Password
+     * Reset Password and update database
      */
-    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    public function resetPassword(Request $request): JsonResponse
     {
+        $request->validate([
+            'email' => 'required|email',
+            'token' => 'required|string',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $email = strtolower(trim($request->input('email')));
+        $token = $request->input('token');
+        $newPassword = $request->input('password');
+
+        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $email)->first();
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired password reset link.',
+            ], 422);
+        }
+
+        $isValidToken = \Illuminate\Support\Facades\Hash::check($token, $record->token) || $token === $record->token;
+
+        if (!$isValidToken) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid password reset token.',
+            ], 422);
+        }
+
+        if (\Carbon\Carbon::parse($record->created_at)->addMinutes(60)->isPast()) {
+            \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $email)->delete();
+            return response()->json([
+                'success' => false,
+                'message' => 'Password reset token has expired. Please request a new link.',
+            ], 422);
+        }
+
+        $user = \App\Models\User::where('email', $email)->first();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User account not found.',
+            ], 404);
+        }
+
+        $user->password = \Illuminate\Support\Facades\Hash::make($newPassword);
+        $user->save();
+
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $email)->delete();
+
         return response()->json([
             'success' => true,
-            'message' => 'Password has been successfully reset.',
+            'message' => 'Password has been successfully updated. You can now login with your new password.',
         ], 200);
     }
 
