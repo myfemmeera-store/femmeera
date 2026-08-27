@@ -204,6 +204,13 @@ export default function CheckoutPage() {
       const createdOrder = orderRes.data.order;
       if (typeof window !== 'undefined') {
         localStorage.setItem('femmeera_last_order', createdOrder.order_number);
+        try {
+          const existing = JSON.parse(localStorage.getItem('femmeera_customer_orders') || '[]');
+          if (Array.isArray(existing) && !existing.includes(createdOrder.order_number)) {
+            existing.unshift(createdOrder.order_number);
+            localStorage.setItem('femmeera_customer_orders', JSON.stringify(existing));
+          }
+        } catch {}
       }
 
       // Handle Cash on Delivery

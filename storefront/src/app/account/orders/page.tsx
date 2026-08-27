@@ -43,33 +43,52 @@ export default function CustomerOrdersPage() {
   const [selectedTrackOrder, setSelectedTrackOrder] = useState<DetailedOrder | null>(null);
 
   useEffect(() => {
-    const user = authService.getStoredUser();
-    const token = authService.getStoredToken();
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      const user = authService.getStoredUser();
+      const token = authService.getStoredToken();
 
-    if (user || token) {
-      apiClient<DetailedOrder[]>('/customer/orders')
-        .then((res) => {
+      let fetchedOrders: DetailedOrder[] = [];
+
+      // 1. Attempt API fetch if authenticated
+      if (token || user) {
+        try {
+          const res = await apiClient<DetailedOrder[]>('/customer/orders');
           if (res.success && res.data && Array.isArray(res.data)) {
-            setOrders(res.data);
+            fetchedOrders = res.data;
           }
-        })
-        .catch(() => {})
-        .finally(() => setIsLoading(false));
-    } else {
-      // Check if there is a recently placed order stored in localStorage
-      const lastOrderNum = localStorage.getItem('femmeera_last_order');
-      if (lastOrderNum) {
-        apiClient<DetailedOrder>(`/orders/lookup/${lastOrderNum}`)
-          .then((res) => {
-            if (res.success && res.data) {
-              setOrders([res.data]);
-            }
-          })
-          .finally(() => setIsLoading(false));
-      } else {
-        setIsLoading(false);
+        } catch {}
       }
-    }
+
+      // 2. If no orders returned from API, check localStorage for placed orders (Guest / Offline fallback)
+      if (fetchedOrders.length === 0 && typeof window !== 'undefined') {
+        try {
+          const storedNumbers: string[] = JSON.parse(
+            localStorage.getItem('femmeera_customer_orders') || '[]'
+          );
+          const lastOrderNum = localStorage.getItem('femmeera_last_order');
+          
+          if (lastOrderNum && !storedNumbers.includes(lastOrderNum)) {
+            storedNumbers.unshift(lastOrderNum);
+          }
+
+          for (const num of storedNumbers) {
+            try {
+              const res = await apiClient<DetailedOrder>(`/orders/lookup/${num}`);
+              const orderDetail = res.data;
+              if (res.success && orderDetail && !fetchedOrders.some((o) => o.id === orderDetail.id)) {
+                fetchedOrders.push(orderDetail);
+              }
+            } catch {}
+          }
+        } catch {}
+      }
+
+      setOrders(fetchedOrders);
+      setIsLoading(false);
+    };
+
+    fetchOrders();
   }, []);
 
   const getStepNumber = (status?: string) => {
