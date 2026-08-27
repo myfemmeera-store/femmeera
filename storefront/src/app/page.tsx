@@ -132,6 +132,7 @@ export default async function HomePage() {
   const promoImage = settings.promo_banner_image || '/images/unlock_world_fashion_banner.jpg';
   const promoUrl = settings.promo_banner_url || '/women/western-wear';
   const promoStatus = settings.promo_banner_status || 'ACTIVE';
+  const promoFit = settings.promo_banner_fit || 'cover';
 
   const rawProducts = productsRes.data || [];
   const displayNewArrivals = rawProducts.length > 0 ? rawProducts.slice(0, 6) : defaultNewArrivals;
@@ -472,13 +473,21 @@ export default async function HomePage() {
       {promoStatus === 'ACTIVE' && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 my-10">
           <Link href={promoUrl} className="block group">
-            <div className="relative rounded-3xl overflow-hidden shadow-lg border border-[#E8DEC8]">
+            <div className="relative rounded-3xl overflow-hidden shadow-lg border border-[#E8DEC8] bg-neutral-900">
               <div className="relative w-full aspect-[21/7] sm:aspect-[24/7]">
                 <Image
                   src={promoImage}
                   alt="Unlock the world of fashion - Your retail destination, just a click away!"
                   fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
+                  className={`transition-transform duration-700 group-hover:scale-[1.01] ${
+                    promoFit === 'contain'
+                      ? 'object-contain bg-neutral-900'
+                      : promoFit === 'top'
+                      ? 'object-cover object-top'
+                      : promoFit === 'bottom'
+                      ? 'object-cover object-bottom'
+                      : 'object-cover'
+                  }`}
                   priority
                 />
               </div>

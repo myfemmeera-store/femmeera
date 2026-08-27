@@ -30,6 +30,7 @@ export default function HeroBannersAdminPage() {
     promo_banner_image: '/images/unlock_world_fashion_banner.jpg',
     promo_banner_url: '/women/western-wear',
     promo_banner_status: 'ACTIVE',
+    promo_banner_fit: 'cover',
   });
 
   // Shop By Category State
@@ -72,6 +73,7 @@ export default function HeroBannersAdminPage() {
           promo_banner_image: res.data.promo_banner_image || '/images/unlock_world_fashion_banner.jpg',
           promo_banner_url: res.data.promo_banner_url || '/women/western-wear',
           promo_banner_status: res.data.promo_banner_status || 'ACTIVE',
+          promo_banner_fit: res.data.promo_banner_fit || 'cover',
         });
 
         if (res.data.homepage_shop_categories && Array.isArray(res.data.homepage_shop_categories)) {
@@ -659,17 +661,25 @@ export default function HeroBannersAdminPage() {
       </Card>
 
       {/* SECTION 4: MID-PAGE PROMOTIONAL BANNER */}
-      <Card title="Featured Mid-Page Promotional Banner" subtitle="Control image and click-through redirect URL for 'Unlock the world of fashion' banner">
+      <Card title="Featured Mid-Page Promotional Banner" subtitle="Control image, framing fit, and click-through redirect URL for 'Unlock the world of fashion' banner">
         <form onSubmit={handleSavePromo} className="p-4 space-y-4 text-xs">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             
             {/* Banner Preview */}
-            <div className="relative w-full sm:w-64 aspect-[21/7] bg-neutral-100 border border-neutral-200 rounded-xl overflow-hidden shrink-0">
+            <div className="relative w-full sm:w-64 aspect-[21/7] bg-neutral-900 border border-neutral-200 rounded-xl overflow-hidden shrink-0">
               <Image
                 src={promoForm.promo_banner_image}
                 alt="Promo Banner Preview"
                 fill
-                className="object-cover"
+                className={
+                  promoForm.promo_banner_fit === 'contain'
+                    ? 'object-contain bg-neutral-900'
+                    : promoForm.promo_banner_fit === 'top'
+                    ? 'object-cover object-top'
+                    : promoForm.promo_banner_fit === 'bottom'
+                    ? 'object-cover object-bottom'
+                    : 'object-cover'
+                }
               />
             </div>
 
@@ -693,6 +703,20 @@ export default function HeroBannersAdminPage() {
                   placeholder="/images/unlock_world_fashion_banner.jpg"
                   className="w-full px-3 py-2 border border-neutral-300 rounded-xl focus:outline-none focus:border-black font-mono text-[11px]"
                 />
+              </div>
+
+              <div>
+                <label className="font-bold text-neutral-700 block mb-1">Image Framing / Fit in Frame</label>
+                <select
+                  value={promoForm.promo_banner_fit}
+                  onChange={(e) => setPromoForm({ ...promoForm, promo_banner_fit: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-xl focus:outline-none focus:border-black font-bold text-xs bg-white"
+                >
+                  <option value="cover">Fill Frame (Standard Crop)</option>
+                  <option value="contain">Fit Entire Image (No Crop)</option>
+                  <option value="top">Top Focus (Show Upper Body / Face)</option>
+                  <option value="bottom">Bottom Focus (Show Dress Hem)</option>
+                </select>
               </div>
 
               <div>
