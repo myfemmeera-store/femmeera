@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 class MediaController extends Controller
 {
     /**
-     * Upload an image or video file to Laravel public storage disk.
+     * Upload an image or video file to Laravel public storage disk and sync to public/storage.
      */
     public function upload(Request $request): JsonResponse
     {
@@ -31,10 +31,19 @@ class MediaController extends Controller
         $disk = 'public';
         Storage::disk($disk)->putFileAs("{$folder}/{$yearMonth}", $file, $fileName);
 
-        // Ensure file & directory permissions are web-readable on Hostinger (0755 dirs, 0644 files)
         $storagePath = storage_path("app/public/{$folder}/{$yearMonth}/{$fileName}");
         $publicPath = public_path("storage/{$folder}/{$yearMonth}/{$fileName}");
 
+        // Directly copy file to public/storage folder so Hostinger web server serves it natively
+        $publicDir = dirname($publicPath);
+        if (!file_exists($publicDir)) {
+            @mkdir($publicDir, 0755, true);
+        }
+        if (file_exists($storagePath)) {
+            @copy($storagePath, $publicPath);
+        }
+
+        // Ensure 0755 dir and 0644 file permissions for Hostinger
         if (file_exists($storagePath)) {
             @chmod($storagePath, 0644);
             @chmod(dirname($storagePath), 0755);
