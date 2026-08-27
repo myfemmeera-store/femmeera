@@ -49,18 +49,26 @@ class CustomerOrderController extends Controller
 
     /**
      * GET /api/v1/customer/orders
+     * Validates customer email ID and returns orders matching user_id or email address.
      */
     public function index(Request $request): JsonResponse
     {
-        $orders = $request->user()
-            ->orders()
+        $user = $request->user();
+        $userEmail = strtolower(trim($user->email ?? ''));
+
+        $orders = Order::where(function ($query) use ($user, $userEmail) {
+                $query->where('user_id', $user->id);
+                if (!empty($userEmail)) {
+                    $query->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(shipping_address_snapshot, "$.email"))) = ?', [$userEmail]);
+                }
+            })
             ->with(['items.product.images', 'latestPayment', 'statusHistory'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
         return response()->json([
             'success' => true,
-            'message' => 'Customer orders retrieved.',
+            'message' => 'Customer orders retrieved successfully.',
             'data' => $orders->items(),
             'meta' => [
                 'pagination' => [
@@ -75,8 +83,9 @@ class CustomerOrderController extends Controller
 
     /**
      * GET /api/v1/orders/lookup/{orderNumber}
+     * Fetches single order details and auto-links to customer account if email matches.
      */
-    public function showByNumber(string $orderNumber): JsonResponse
+    public function showByNumber(Request $request, string $orderNumber): JsonResponse
     {
         $order = Order::where('order_number', $orderNumber)
             ->orWhere('id', $orderNumber)
@@ -88,6 +97,16 @@ class CustomerOrderController extends Controller
                 'success' => false,
                 'message' => 'Order not found.',
             ], 404);
+        }
+
+        // Auto-link order to customer user_id if email matches and user_id is empty
+        $authUser = $request->user();
+        if ($authUser) {
+            $shippingEmail = strtolower($order->shipping_address_snapshot['email'] ?? '');
+            if (empty($order->user_id) && ($shippingEmail === strtolower($authUser->email))) {
+                $order->user_id = $authUser->id;
+                $order->save();
+            }
         }
 
         return response()->json([

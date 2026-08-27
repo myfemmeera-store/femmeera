@@ -104,6 +104,7 @@ class CheckoutController extends Controller
         $payload = [
             'shipping_address' => [
                 'name' => $request->input('shipping_address.name'),
+                'email' => $request->input('shipping_address.email', $user ? $user->email : ''),
                 'phone' => $request->input('shipping_address.phone'),
                 'address' => $request->input('shipping_address.address'),
                 'address_line_2' => $request->input('shipping_address.address_line_2', ''),
