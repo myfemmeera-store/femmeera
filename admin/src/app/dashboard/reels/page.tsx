@@ -87,10 +87,10 @@ export default function WatchAndShopAdminPage() {
 
     setIsUploadingVideo(true);
     try {
-      const res = await mediaService.uploadImage(file, 'cms');
+      const res = await mediaService.uploadImage(file, 'reels');
       if (res.success && res.data) {
         setFormData((prev) => ({ ...prev, video_url: res.data!.url }));
-        showToast('Video stored locally & URL set successfully!', 'success');
+        showToast('Watch & Shop video reel uploaded successfully!', 'success');
       } else {
         showToast(res.message || 'Video upload failed.', 'error');
       }
