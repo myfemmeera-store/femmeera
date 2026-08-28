@@ -4,7 +4,6 @@ import './globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
-import { PromotionalPopup } from '@/components/ui/PromotionalPopup';
 import { JsonLd } from '@/components/ui/JsonLd';
 
 const playfair = Playfair_Display({
@@ -44,7 +43,6 @@ export default function RootLayout({
         <main className="flex-1 pb-16 sm:pb-0">{children}</main>
         <Footer />
         <MobileBottomNav />
-        <PromotionalPopup />
       </body>
     </html>
   );
