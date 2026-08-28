@@ -141,7 +141,7 @@ export const HeroSlider: React.FC = () => {
                     <div className="pt-4" onClick={(e) => e.stopPropagation()}>
                       <Link
                         href={s.link}
-                        className="inline-flex items-center space-x-3 px-7 py-3.5 bg-transparent border-1.5 border-[#c5a059] hover:bg-white/10 backdrop-blur-xs text-white font-sans text-xs sm:text-sm font-bold uppercase tracking-widest rounded-full shadow-lg transition-all hover:scale-105"
+                        className="inline-flex items-center space-x-3 px-8 py-3.5 bg-black/20 hover:bg-black/40 border border-[#c5a059] backdrop-blur-md text-white font-sans text-xs sm:text-sm font-bold uppercase tracking-[0.2em] rounded-2xl shadow-lg transition-all hover:scale-105"
                       >
                         <span>{s.buttonText}</span>
                         <ArrowRight className="w-4 h-4 text-white" />
