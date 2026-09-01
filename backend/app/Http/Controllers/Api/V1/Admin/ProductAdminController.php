@@ -79,6 +79,7 @@ class ProductAdminController extends Controller
             'description' => 'nullable|string',
             'short_description' => 'nullable|string',
             'images' => 'nullable|array',
+            'images.*' => 'nullable',
             'variants' => 'nullable|array',
         ]);
 
@@ -120,23 +121,8 @@ class ProductAdminController extends Controller
             }
         }
 
-        // Attach uploaded images if provided (supports strings or objects with image_url and color_name)
-        if ($request->has('images') && is_array($request->input('images'))) {
-            foreach ($request->input('images') as $idx => $img) {
-                $imgUrl = $this->extractStringUrl($img);
-                $colorName = $this->extractStringColor($img);
-
-                if (!empty($imgUrl)) {
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'color_name' => $colorName,
-                        'image_url'  => $imgUrl,
-                        'is_primary' => $idx === 0 ? 1 : 0,
-                        'sort_order' => $idx + 1,
-                    ]);
-                }
-            }
-        }
+        // Save uploaded or provided images
+        $this->processImageSave($product, $request);
 
         return response()->json([
             'success' => true,
@@ -158,6 +144,8 @@ class ProductAdminController extends Controller
             'status' => 'required|in:ACTIVE,INACTIVE,ARCHIVED',
             'description' => 'nullable|string',
             'short_description' => 'nullable|string',
+            'images' => 'nullable|array',
+            'images.*' => 'nullable',
         ]);
 
         $product->update([
@@ -201,23 +189,10 @@ class ProductAdminController extends Controller
             }
         }
 
-        // If images array supplied, sync images
-        if ($request->has('images') && is_array($request->input('images'))) {
+        // If images array or files supplied, sync images
+        if ($request->has('images') || $request->hasFile('images')) {
             ProductImage::where('product_id', $product->id)->delete();
-            foreach ($request->input('images') as $idx => $img) {
-                $imgUrl = $this->extractStringUrl($img);
-                $colorName = $this->extractStringColor($img);
-
-                if (!empty($imgUrl)) {
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'color_name' => $colorName,
-                        'image_url'  => $imgUrl,
-                        'is_primary' => $idx === 0 ? 1 : 0,
-                        'sort_order' => $idx + 1,
-                    ]);
-                }
-            }
+            $this->processImageSave($product, $request);
         }
 
         return response()->json([
@@ -230,38 +205,59 @@ class ProductAdminController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $product = Product::findOrFail($id);
+        $product->delete(); // SoftDeletes via deleted_at timestamp: preserves order_items & order history
 
-        // Check if product is referenced in order_items
-        $hasOrders = DB::table('order_items')->where('product_id', $product->id)->exists();
+        return response()->json([
+            'success' => true,
+            'message' => 'Product soft-deleted successfully and hidden from storefront catalog.',
+        ], 200);
+    }
 
-        if ($hasOrders) {
-            $product->update(['status' => 'ARCHIVED']);
-            return response()->json([
-                'success' => true,
-                'message' => 'Product has existing customer orders, so it was archived and set to INACTIVE instead of hard-deleted.',
-            ], 200);
+    /**
+     * Helper to process and save product images individually.
+     */
+    private function processImageSave(Product $product, Request $request): void
+    {
+        $sortOrder = 1;
+
+        // 1. Handle Multipart FormData binary file uploads
+        if ($request->hasFile('images')) {
+            $files = $request->file('images');
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+            foreach ($files as $file) {
+                if ($file && $file->isValid()) {
+                    $path = $file->store('products', 'public');
+                    $fullUrl = asset('storage/' . ltrim($path, '/'));
+
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'color_name' => null,
+                        'image_url'  => $fullUrl,
+                        'is_primary' => $sortOrder === 1,
+                        'sort_order' => $sortOrder++,
+                    ]);
+                }
+            }
         }
 
-        try {
-            DB::transaction(function () use ($product) {
-                $variantIds = ProductVariant::where('product_id', $product->id)->pluck('id');
-                Inventory::whereIn('variant_id', $variantIds)->delete();
-                ProductVariant::where('product_id', $product->id)->delete();
-                ProductImage::where('product_id', $product->id)->delete();
-                $product->delete();
-            });
+        // 2. Handle JSON array of image URLs or objects ({ image_url, color_name })
+        if ($request->has('images') && is_array($request->input('images'))) {
+            foreach ($request->input('images') as $img) {
+                $imgUrl = $this->extractStringUrl($img);
+                $colorName = $this->extractStringColor($img);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Product deleted successfully.',
-            ], 200);
-        } catch (\Exception $e) {
-            // Fallback if foreign key constraint is encountered
-            $product->update(['status' => 'ARCHIVED']);
-            return response()->json([
-                'success' => true,
-                'message' => 'Product is referenced by past orders or sales records and has been archived.',
-            ], 200);
+                if (!empty($imgUrl)) {
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'color_name' => $colorName,
+                        'image_url'  => $imgUrl,
+                        'is_primary' => $sortOrder === 1,
+                        'sort_order' => $sortOrder++,
+                    ]);
+                }
+            }
         }
     }
 
