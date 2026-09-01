@@ -123,28 +123,14 @@ class ProductAdminController extends Controller
         // Attach uploaded images if provided (supports strings or objects with image_url and color_name)
         if ($request->has('images') && is_array($request->input('images'))) {
             foreach ($request->input('images') as $idx => $img) {
-                $imgUrl = null;
-                $colorName = null;
+                $imgUrl = $this->extractStringUrl($img);
+                $colorName = $this->extractStringColor($img);
 
-                if (is_array($img)) {
-                    $imgUrl = $img['image_url'] ?? $img['url'] ?? null;
-                    $colorName = $img['color_name'] ?? null;
-
-                    if (is_array($imgUrl)) {
-                        $imgUrl = $imgUrl['image_url'] ?? $imgUrl['url'] ?? null;
-                    }
-                    if (is_array($colorName)) {
-                        $colorName = $colorName['color_name'] ?? null;
-                    }
-                } elseif (is_string($img)) {
-                    $imgUrl = $img;
-                }
-
-                if (!empty($imgUrl) && is_string($imgUrl)) {
+                if (!empty($imgUrl)) {
                     ProductImage::create([
                         'product_id' => $product->id,
-                        'color_name' => is_string($colorName) ? $colorName : null,
-                        'image_url' => $imgUrl,
+                        'color_name' => $colorName,
+                        'image_url'  => $imgUrl,
                         'is_primary' => $idx === 0 ? 1 : 0,
                         'sort_order' => $idx + 1,
                     ]);
@@ -219,28 +205,14 @@ class ProductAdminController extends Controller
         if ($request->has('images') && is_array($request->input('images'))) {
             ProductImage::where('product_id', $product->id)->delete();
             foreach ($request->input('images') as $idx => $img) {
-                $imgUrl = null;
-                $colorName = null;
+                $imgUrl = $this->extractStringUrl($img);
+                $colorName = $this->extractStringColor($img);
 
-                if (is_array($img)) {
-                    $imgUrl = $img['image_url'] ?? $img['url'] ?? null;
-                    $colorName = $img['color_name'] ?? null;
-
-                    if (is_array($imgUrl)) {
-                        $imgUrl = $imgUrl['image_url'] ?? $imgUrl['url'] ?? null;
-                    }
-                    if (is_array($colorName)) {
-                        $colorName = $colorName['color_name'] ?? null;
-                    }
-                } elseif (is_string($img)) {
-                    $imgUrl = $img;
-                }
-
-                if (!empty($imgUrl) && is_string($imgUrl)) {
+                if (!empty($imgUrl)) {
                     ProductImage::create([
                         'product_id' => $product->id,
-                        'color_name' => is_string($colorName) ? $colorName : null,
-                        'image_url' => $imgUrl,
+                        'color_name' => $colorName,
+                        'image_url'  => $imgUrl,
                         'is_primary' => $idx === 0 ? 1 : 0,
                         'sort_order' => $idx + 1,
                     ]);
@@ -390,5 +362,50 @@ class ProductAdminController extends Controller
             'success' => true,
             'message' => 'Variant deleted successfully.',
         ], 200);
+    }
+
+    private function extractStringUrl($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+        if (is_string($value)) {
+            return trim($value);
+        }
+        if (is_array($value)) {
+            if (isset($value['image_url'])) {
+                return $this->extractStringUrl($value['image_url']);
+            }
+            if (isset($value['url'])) {
+                return $this->extractStringUrl($value['url']);
+            }
+            $first = reset($value);
+            return $this->extractStringUrl($first);
+        }
+        return null;
+    }
+
+    private function extractStringColor($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+        if (is_string($value)) {
+            return trim($value);
+        }
+        if (is_array($value)) {
+            if (isset($value['color_name'])) {
+                return $this->extractStringColor($value['color_name']);
+            }
+            if (isset($value['color'])) {
+                return $this->extractStringColor($value['color']);
+            }
+            if (isset($value['name'])) {
+                return $this->extractStringColor($value['name']);
+            }
+            $first = reset($value);
+            return $this->extractStringColor($first);
+        }
+        return null;
     }
 }
