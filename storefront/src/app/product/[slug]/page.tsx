@@ -175,39 +175,37 @@ export default function ProductDetailPage() {
     }
   }, [colorOptions]);
 
-  // Color-specific image gallery (prioritizes selected color images first, then appends all remaining product photos)
+  // Color-specific image gallery (filters to ONLY images matching selectedColor section from admin)
   const colorSpecificImages = React.useMemo(() => {
     if (!product?.images || product.images.length === 0) {
       return [];
     }
-    const allUrls = product.images.map((img) => img.image_url).filter(Boolean);
     const cleanSelected = (selectedColor || '').trim().toLowerCase();
 
-    // 1. Filter images matching selected color section by tag or URL
-    const matchingImgs = product.images
-      .filter((img) => {
-        if (!img.image_url) return false;
-        const tagMatch = img.color_name && (
-          img.color_name.trim().toLowerCase() === cleanSelected ||
-          cleanSelected.includes(img.color_name.trim().toLowerCase()) ||
-          img.color_name.trim().toLowerCase().includes(cleanSelected)
-        );
-        const urlMatch = img.image_url.toLowerCase().includes(cleanSelected);
-        return tagMatch || urlMatch;
-      })
-      .map((img) => img.image_url);
+    // 1. Filter images uploaded into this specific color section in admin
+    const colorSectionMatches = product.images.filter((img) => 
+      img.color_name && img.color_name.trim().toLowerCase() === cleanSelected
+    );
+    if (colorSectionMatches.length > 0) {
+      return colorSectionMatches.map((img) => img.image_url);
+    }
 
-    // 2. Ordered list: selected color photos first, followed by all remaining product photos
-    const resultList: string[] = [];
-    matchingImgs.forEach((url) => {
-      if (!resultList.includes(url)) resultList.push(url);
-    });
-    allUrls.forEach((url) => {
-      if (!resultList.includes(url)) resultList.push(url);
-    });
+    // 2. Filter images whose image_url contains color name
+    const urlMatches = product.images.filter((img) => 
+      img.image_url && img.image_url.toLowerCase().includes(cleanSelected)
+    );
+    if (urlMatches.length > 0) {
+      return urlMatches.map((img) => img.image_url);
+    }
 
-    return resultList;
-  }, [product?.images, selectedColor]);
+    // 3. Single image matched in colorOptions for selected color
+    const activeColorCard = colorOptions.find((c) => c.name.trim().toLowerCase() === cleanSelected);
+    if (activeColorCard?.image) {
+      return [activeColorCard.image];
+    }
+
+    return product.images.map((img) => img.image_url);
+  }, [product?.images, selectedColor, colorOptions]);
 
   // Sync main stage image when selectedColor changes
   useEffect(() => {
@@ -419,36 +417,43 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Price & Offer Box */}
-            <div className="space-y-3">
-              <div className="flex items-baseline space-x-3">
-                <span className="font-sans font-extrabold text-2xl text-neutral-900">
-                  ₹{price.toLocaleString('en-IN')}
-                </span>
+            {/* Price & Discount Section matching reference screenshot */}
+            <div className="space-y-2 border-b border-neutral-200 pb-4">
+              <div className="flex items-baseline space-x-2">
                 {mrp > price && (
-                  <span className="text-sm text-neutral-400 line-through">
-                    ₹{mrp.toLocaleString('en-IN')}
+                  <span className="text-rose-600 font-extrabold text-xl sm:text-2xl">
+                    -{Math.round(((mrp - price) / mrp) * 100)}%
                   </span>
                 )}
-                <span className="text-xs text-neutral-400">Inclusive of all taxes</span>
+                <span className="font-sans font-black text-2xl sm:text-3xl text-neutral-900">
+                  ₹{price.toLocaleString('en-IN')}
+                </span>
               </div>
 
+              {mrp > price && (
+                <div className="text-xs text-neutral-500 font-medium">
+                  M.R.P.: <span className="line-through text-neutral-400">₹{mrp.toLocaleString('en-IN')}</span>
+                </div>
+              )}
+
+              <p className="text-xs font-semibold text-neutral-700">Inclusive of all taxes</p>
+
               {/* Prepaid Offer Callout */}
-              <div className="bg-[#FAF3E7] border border-[#E8DEC8] rounded-xl p-3 flex items-center space-x-2 text-xs text-[#7A6240]">
+              <div className="bg-[#FAF3E7] border border-[#E8DEC8] rounded-xl p-3 flex items-center space-x-2 text-xs text-[#7A6240] mt-2">
                 <Sparkles className="w-4 h-4 text-[#B38548] shrink-0" />
                 <span>Get it for <strong>₹{Math.round(price * 0.9).toLocaleString('en-IN')}</strong> with 10% Off On Prepaid Orders</span>
               </div>
             </div>
 
-            {/* Color Selection Cards (Amazon Style with product photo & price) */}
+            {/* Color Selection Cards (Amazon Style layout matching reference image) */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-neutral-900 block uppercase tracking-wider">
-                  Colour: <span className="text-[#B38548] font-extrabold">{selectedColor}</span>
+                  Colour: <span className="text-neutral-900 font-extrabold">{selectedColor}</span>
                 </label>
               </div>
 
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
+              <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none">
                 {colorOptions.map((c) => {
                   const isSelected = selectedColor === c.name;
                   return (
@@ -457,19 +462,21 @@ export default function ProductDetailPage() {
                       type="button"
                       onClick={() => {
                         setSelectedColor(c.name);
-                        setSelectedImage(c.image);
+                        if (c.image) setSelectedImage(c.image);
                         setHoveredColorImage(null);
                       }}
-                      onMouseEnter={() => setHoveredColorImage(c.image)}
+                      onMouseEnter={() => {
+                        if (c.image) setHoveredColorImage(c.image);
+                      }}
                       onMouseLeave={() => setHoveredColorImage(null)}
-                      className={`relative shrink-0 w-24 sm:w-28 flex flex-col items-center bg-white rounded-2xl p-2 border-2 transition-all cursor-pointer ${
+                      className={`relative shrink-0 w-20 sm:w-24 flex flex-col items-center bg-white rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-[#B38548] ring-2 ring-[#B38548]/30 shadow-md scale-105'
-                          : 'border-[#EFE6D8] hover:border-[#B38548]/60 hover:shadow-xs'
+                          ? 'border-neutral-900 ring-1 ring-neutral-900 shadow-sm'
+                          : 'border-neutral-300 hover:border-neutral-500'
                       }`}
                     >
                       {/* Color Preview Image Box */}
-                      <div className="relative w-full aspect-3/4 bg-neutral-100 rounded-xl overflow-hidden mb-2 border border-neutral-100 flex items-center justify-center">
+                      <div className="relative w-full aspect-3/4 bg-neutral-100 overflow-hidden">
                         {c.image ? (
                           <Image
                             src={c.image}
@@ -478,36 +485,25 @@ export default function ProductDetailPage() {
                             className="object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-200/70 p-1">
-                            <span
-                              className="w-7 h-7 rounded-full border-2 border-white shadow-xs mb-1"
-                              style={{ backgroundColor: c.code }}
-                            />
-                            <span className="text-[9px] font-bold text-neutral-700 truncate max-w-full">{c.name}</span>
+                          <div className="w-full h-full flex items-center justify-center bg-neutral-200 text-neutral-500 text-[10px] font-bold p-1 text-center">
+                            {c.name}
                           </div>
                         )}
-                        {/* Color Swatch Dot Badge */}
-                        {c.image && (
-                          <span
-                            className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full border border-white shadow-xs"
-                            style={{ backgroundColor: c.code }}
-                            title={c.name}
-                          />
-                        )}
+                        {/* Color Dot Swatch Badge */}
+                        <span
+                          className="absolute top-1 right-1 w-3 h-3 rounded-full border border-white shadow-xs"
+                          style={{ backgroundColor: c.code }}
+                          title={c.name}
+                        />
                       </div>
 
-                      {/* Color Name Label */}
-                      <span className="text-[11px] font-bold text-neutral-800 truncate w-full text-center mb-0.5">
-                        {c.name}
-                      </span>
-
-                      {/* Color Price & MRP */}
-                      <div className="flex flex-col items-center leading-tight">
-                        <span className="text-xs font-extrabold text-neutral-900">
+                      {/* Color Price & MRP Box */}
+                      <div className="p-1.5 flex flex-col items-center w-full bg-white text-center border-t border-neutral-100 leading-tight">
+                        <span className="text-[11px] font-extrabold text-neutral-900">
                           ₹{c.price.toLocaleString('en-IN')}
                         </span>
                         {c.mrp > c.price && (
-                          <span className="text-[10px] text-neutral-400 line-through">
+                          <span className="text-[9px] text-neutral-400 line-through">
                             ₹{c.mrp.toLocaleString('en-IN')}
                           </span>
                         )}
