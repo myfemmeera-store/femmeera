@@ -41,6 +41,7 @@ export default function ProductDetailPage() {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
+  const [hoveredColorImage, setHoveredColorImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -86,27 +87,45 @@ export default function ProductDetailPage() {
     });
   }, [slug]);
 
-  // Color options derived from product variants or default
+  // Color options derived from product variants or default, enriched with image & price info
   const colorOptions = React.useMemo(() => {
     if (!product?.variants || product.variants.length === 0) {
-      return [{ name: 'Standard', code: '#B38548' }];
+      const defaultImg = product?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
+      return [{ name: 'Standard', code: '#B38548', image: defaultImg, price: Number(product?.price || 2199), mrp: Number(product?.mrp || 2999) }];
     }
-    const map = new Map<string, string>();
+
+    const colorMap = new Map<string, { code: string; image: string; price: number; mrp: number }>();
+
     product.variants.forEach((v) => {
-      if (v.color && !map.has(v.color)) {
+      if (v.color && !colorMap.has(v.color)) {
         const hex = v.color_code || (
           v.color.toLowerCase() === 'beige' ? '#E6D7C3' :
           v.color.toLowerCase() === 'black' ? '#222222' :
           v.color.toLowerCase() === 'white' ? '#FFFFFF' :
+          v.color.toLowerCase() === 'peach' ? '#FFDAB9' :
           v.color.toLowerCase() === 'ruby red' || v.color.toLowerCase() === 'red' ? '#E0115F' :
           v.color.toLowerCase() === 'royal blue' || v.color.toLowerCase() === 'blue' ? '#002366' :
           '#B38548'
         );
-        map.set(v.color, hex);
+
+        // Find specific image tagged with this color_name
+        const colorImgObj = product.images?.find((img) => img.color_name?.toLowerCase() === v.color.toLowerCase());
+        const colorImg = colorImgObj?.image_url 
+          || product.images?.[colorMap.size]?.image_url 
+          || product.images?.[0]?.image_url 
+          || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
+
+        colorMap.set(v.color, {
+          code: hex,
+          image: colorImg,
+          price: Number(v.price || product.price || 2199),
+          mrp: Number(v.mrp || product.mrp || 2999)
+        });
       }
     });
-    return Array.from(map.entries()).map(([name, code]) => ({ name, code }));
-  }, [product?.variants]);
+
+    return Array.from(colorMap.entries()).map(([name, data]) => ({ name, ...data }));
+  }, [product?.variants, product?.images, product?.price, product?.mrp]);
 
   // Initial color setup on product load
   useEffect(() => {
@@ -115,7 +134,7 @@ export default function ProductDetailPage() {
     }
   }, [colorOptions]);
 
-  // Color-specific image gallery
+  // Color-specific image gallery (filters to ONLY images matching selectedColor)
   const colorSpecificImages = React.useMemo(() => {
     if (!product?.images || product.images.length === 0) {
       return [
@@ -123,7 +142,7 @@ export default function ProductDetailPage() {
         'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1200&auto=format&fit=crop',
       ];
     }
-    const matching = product.images.filter((img) => img.color_name === selectedColor);
+    const matching = product.images.filter((img) => img.color_name?.toLowerCase() === selectedColor.toLowerCase());
     if (matching.length > 0) {
       return matching.map((img) => img.image_url);
     }
@@ -297,7 +316,7 @@ export default function ProductDetailPage() {
 
             {/* Main Stage Image */}
             <div className="relative flex-1 aspect-3/4 sm:aspect-4/5 bg-white rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
-              <Image src={selectedImage || colorSpecificImages[0]} alt={product.name} fill priority className="object-cover" />
+              <Image src={hoveredColorImage || selectedImage || colorSpecificImages[0]} alt={product.name} fill priority className="object-cover transition-all duration-300" />
 
               <span className="absolute top-4 left-4 bg-neutral-900 text-white text-[9px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
                 NEW
@@ -356,31 +375,66 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Color Selection Swatches */}
-            <div className="space-y-2">
+            {/* Color Selection Cards (Amazon Style with product photo & price) */}
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-neutral-900 block">
-                  COLOR: <span className="text-[#B38548] font-bold uppercase tracking-wider">{selectedColor}</span>
+                <label className="text-xs font-bold text-neutral-900 block uppercase tracking-wider">
+                  Colour: <span className="text-[#B38548] font-extrabold">{selectedColor}</span>
                 </label>
               </div>
 
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
                 {colorOptions.map((c) => {
                   const isSelected = selectedColor === c.name;
                   return (
                     <button
                       key={c.name}
                       type="button"
-                      onClick={() => setSelectedColor(c.name)}
-                      title={c.name}
-                      className={`relative w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${
-                        isSelected ? 'border-[#B38548] ring-2 ring-[#B38548]/40 scale-110 shadow-md' : 'border-neutral-300 hover:scale-105'
+                      onClick={() => {
+                        setSelectedColor(c.name);
+                        setSelectedImage(c.image);
+                        setHoveredColorImage(null);
+                      }}
+                      onMouseEnter={() => setHoveredColorImage(c.image)}
+                      onMouseLeave={() => setHoveredColorImage(null)}
+                      className={`relative shrink-0 w-24 sm:w-28 flex flex-col items-center bg-white rounded-2xl p-2 border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-[#B38548] ring-2 ring-[#B38548]/30 shadow-md scale-105'
+                          : 'border-[#EFE6D8] hover:border-[#B38548]/60 hover:shadow-xs'
                       }`}
-                      style={{ backgroundColor: c.code }}
                     >
-                      {isSelected && (
-                        <span className={`w-2.5 h-2.5 rounded-full ${c.code?.toLowerCase() === '#ffffff' || c.code?.toLowerCase() === 'white' ? 'bg-black' : 'bg-white'}`} />
-                      )}
+                      {/* Color Preview Image Box */}
+                      <div className="relative w-full aspect-3/4 bg-neutral-100 rounded-xl overflow-hidden mb-2 border border-neutral-100">
+                        <Image
+                          src={c.image}
+                          alt={`${product.name} - ${c.name}`}
+                          fill
+                          className="object-cover"
+                        />
+                        {/* Color Swatch Dot Badge */}
+                        <span
+                          className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full border border-white shadow-xs"
+                          style={{ backgroundColor: c.code }}
+                          title={c.name}
+                        />
+                      </div>
+
+                      {/* Color Name Label */}
+                      <span className="text-[11px] font-bold text-neutral-800 truncate w-full text-center mb-0.5">
+                        {c.name}
+                      </span>
+
+                      {/* Color Price & MRP */}
+                      <div className="flex flex-col items-center leading-tight">
+                        <span className="text-xs font-extrabold text-neutral-900">
+                          ₹{c.price.toLocaleString('en-IN')}
+                        </span>
+                        {c.mrp > c.price && (
+                          <span className="text-[10px] text-neutral-400 line-through">
+                            ₹{c.mrp.toLocaleString('en-IN')}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
