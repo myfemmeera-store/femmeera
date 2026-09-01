@@ -414,20 +414,22 @@ class ProductAdminController extends Controller
             return null;
         }
         if (is_string($value)) {
-            return trim($value);
+            $val = trim($value);
+            if (empty($val) || str_starts_with($val, 'http://') || str_starts_with($val, 'https://') || str_starts_with($val, '/')) {
+                return null;
+            }
+            return $val;
         }
         if (is_array($value)) {
-            if (isset($value['color_name'])) {
+            if (array_key_exists('color_name', $value)) {
                 return $this->extractStringColor($value['color_name']);
             }
-            if (isset($value['color'])) {
+            if (array_key_exists('color', $value)) {
                 return $this->extractStringColor($value['color']);
             }
-            if (isset($value['name'])) {
+            if (array_key_exists('name', $value)) {
                 return $this->extractStringColor($value['name']);
             }
-            $first = reset($value);
-            return $this->extractStringColor($first);
         }
         return null;
     }
