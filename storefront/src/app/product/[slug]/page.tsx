@@ -222,17 +222,29 @@ export default function ProductDetailPage() {
     return [product.images[0].image_url];
   }, [product?.images, selectedColor, colorOptions]);
 
+  // All product images list with selected color images ordered first
+  const displayImages = React.useMemo(() => {
+    if (!product?.images || product.images.length === 0) return [];
+
+    const matchedUrls = colorSpecificImages;
+    const remainingUrls = product.images
+      .map((img) => img.image_url)
+      .filter((url) => !matchedUrls.includes(url));
+
+    return [...matchedUrls, ...remainingUrls];
+  }, [product?.images, colorSpecificImages]);
+
   // Sync main stage image when selectedColor changes
   useEffect(() => {
     if (selectedColor && colorOptions.length > 0) {
       const activeCard = colorOptions.find((c) => c.name.trim().toLowerCase() === selectedColor.trim().toLowerCase());
       if (activeCard?.image) {
         setSelectedImage(activeCard.image);
-      } else if (colorSpecificImages.length > 0) {
-        setSelectedImage(colorSpecificImages[0]);
+      } else if (displayImages.length > 0) {
+        setSelectedImage(displayImages[0]);
       }
     }
-  }, [selectedColor, colorOptions, colorSpecificImages]);
+  }, [selectedColor, colorOptions, displayImages]);
 
   // Sizes available for the selected color
   const availableSizes = React.useMemo(() => {
@@ -377,24 +389,31 @@ export default function ProductDetailPage() {
           {/* Gallery Column: Vertical Thumbnails + Main Stage */}
           <div className="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-4">
             
-            {/* Vertical Thumbnails (Showing only photos for selected color) */}
-            <div className="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto shrink-0">
-              {colorSpecificImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImage(img)}
-                  className={`relative w-16 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
-                    selectedImage === img ? 'border-[#B38548] ring-2 ring-[#B38548]/20' : 'border-[#EFE6D8] opacity-80 hover:opacity-100'
-                  }`}
-                >
-                  <Image src={img} alt={`${product.name} thumbnail`} fill className="object-cover" />
-                </button>
-              ))}
+            {/* Vertical Thumbnails (Showing all product images with object-cover, color matches first) */}
+            <div className="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto shrink-0 max-h-[520px] scrollbar-thin">
+              {displayImages.map((img, idx) => {
+                const isColorMatched = colorSpecificImages.includes(img);
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(img)}
+                    className={`relative w-16 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-neutral-100 ${
+                      selectedImage === img
+                        ? 'border-[#B38548] ring-2 ring-[#B38548]/30 scale-105 shadow-xs'
+                        : isColorMatched
+                        ? 'border-neutral-400 opacity-90 hover:opacity-100'
+                        : 'border-[#EFE6D8] opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <Image src={img} alt={`${product.name} thumbnail ${idx + 1}`} fill className="object-cover" />
+                  </button>
+                );
+              })}
             </div>
 
             {/* Main Stage Image */}
             <div className="relative flex-1 aspect-3/4 sm:aspect-4/5 bg-white rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
-              <Image src={hoveredColorImage || selectedImage || colorSpecificImages[0]} alt={product.name} fill priority className="object-cover transition-all duration-300" />
+              <Image src={hoveredColorImage || selectedImage || displayImages[0]} alt={product.name} fill priority className="object-cover transition-all duration-300" />
 
               <span className="absolute top-4 left-4 bg-neutral-900 text-white text-[9px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
                 NEW
