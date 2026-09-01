@@ -45,7 +45,7 @@ export default function EditProductPage() {
     short_description: '',
   });
 
-  const [productImages, setProductImages] = useState<string[]>([]);
+  const [productImages, setProductImages] = useState<any[]>([]);
 
   // Variant Generator State
   const [generatorModalOpen, setGeneratorModalOpen] = useState(false);
@@ -97,7 +97,10 @@ export default function EditProductPage() {
         });
 
         if (p.images && p.images.length > 0) {
-          setProductImages(p.images.map((img) => img.image_url));
+          setProductImages(p.images.map((img) => ({
+            image_url: img.image_url,
+            color_name: img.color_name || null,
+          })));
         }
       } else {
         setError(prodRes.message || 'Product not found.');
@@ -120,22 +123,22 @@ export default function EditProductPage() {
     setIsUploadingImage(true);
     for (const file of selectedFiles) {
       const localPreviewUrl = URL.createObjectURL(file);
-      setProductImages((prev) => [...prev, localPreviewUrl]);
+      setProductImages((prev) => [...prev, { image_url: localPreviewUrl, color_name: null }]);
 
       try {
         const res = await mediaService.uploadImage(file, 'products');
         if (res.success && res.data) {
           const uploadedUrl = res.data.url;
           setProductImages((prev) =>
-            prev.map((img) => (img === localPreviewUrl ? uploadedUrl : img))
+            prev.map((img) => (img.image_url === localPreviewUrl ? { ...img, image_url: uploadedUrl } : img))
           );
         } else {
           showToast(res.message || 'Image upload failed.', 'error');
-          setProductImages((prev) => prev.filter((img) => img !== localPreviewUrl));
+          setProductImages((prev) => prev.filter((img) => img.image_url !== localPreviewUrl));
         }
       } catch (err) {
         showToast('Image upload failed.', 'error');
-        setProductImages((prev) => prev.filter((img) => img !== localPreviewUrl));
+        setProductImages((prev) => prev.filter((img) => img.image_url !== localPreviewUrl));
       }
     }
     setIsUploadingImage(false);
@@ -404,24 +407,51 @@ export default function EditProductPage() {
         <div className="space-y-4 text-xs">
           <p className="text-neutral-500">Upload multiple high-resolution photos. The first image will be set as the primary product cover.</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {productImages.map((imgUrl, idx) => (
-              <div key={idx} className="relative aspect-3/4 bg-neutral-100 rounded-xl overflow-hidden border border-neutral-200 group">
-                <Image src={imgUrl} alt={`Product ${idx + 1}`} fill className="object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeImage(idx)}
-                  className="absolute top-2 right-2 p-1.5 bg-rose-600 text-white rounded-full opacity-90 hover:opacity-100 transition-opacity"
-                  title="Remove Image"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-                {idx === 0 && (
-                  <span className="absolute bottom-2 left-2 bg-neutral-900 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
-                    Cover
-                  </span>
-                )}
-              </div>
-            ))}
+            {productImages.map((imgObj, idx) => {
+              const url = typeof imgObj === 'string' ? imgObj : imgObj.image_url;
+              const colorName = typeof imgObj === 'string' ? null : imgObj.color_name;
+              const availableColors = Array.from(new Set(product?.variants?.map((v) => v.color).filter(Boolean)));
+
+              return (
+                <div key={idx} className="relative aspect-3/4 bg-neutral-100 rounded-xl overflow-hidden border border-neutral-200 group">
+                  <Image src={url} alt={`Product ${idx + 1}`} fill className="object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    className="absolute top-2 right-2 p-1.5 bg-rose-600 text-white rounded-full opacity-90 hover:opacity-100 transition-opacity z-10"
+                    title="Remove Image"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+
+                  <div className="absolute bottom-2 left-2 right-2 flex flex-col gap-1 z-10">
+                    <select
+                      value={colorName || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setProductImages((prev) =>
+                          prev.map((item, i) => (i === idx ? { ...(typeof item === 'string' ? { image_url: item } : item), color_name: val || null } : item))
+                        );
+                      }}
+                      className="bg-neutral-900/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded border-0 focus:outline-none w-full shadow-xs"
+                    >
+                      <option value="">-- All Colors --</option>
+                      {availableColors.map((color) => (
+                        <option key={color} value={color}>
+                          {color}
+                        </option>
+                      ))}
+                    </select>
+
+                    {idx === 0 && (
+                      <span className="bg-amber-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider w-fit">
+                        Cover Photo
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
 
             <label className="aspect-3/4 border-2 border-dashed border-neutral-300 rounded-xl flex flex-col items-center justify-center p-4 text-center cursor-pointer hover:border-black transition-colors bg-neutral-50">
               <ImagePlus className="w-6 h-6 text-neutral-400 mb-1" />
