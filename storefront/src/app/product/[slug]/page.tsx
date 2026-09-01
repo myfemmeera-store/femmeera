@@ -386,22 +386,25 @@ export default function ProductDetailPage() {
         {/* Product Viewer Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           
-          {/* Gallery Column: Vertical Thumbnails + Main Stage */}
-          <div className="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-4">
+          {/* Gallery Column: Vertical Left Thumbnails + Main Stage Photo */}
+          <div className="lg:col-span-7 flex flex-col sm:flex-row gap-4 items-start">
             
-            {/* Vertical Thumbnails (Showing all product images with object-cover, color matches first) */}
-            <div className="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto shrink-0 max-h-[520px] scrollbar-thin">
+            {/* Left Vertical Thumbnails List (Stacked one below the other) */}
+            <div className="flex flex-row sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto shrink-0 max-h-[580px] pr-1 py-1 scrollbar-thin">
               {displayImages.map((img, idx) => {
+                const isSelected = (selectedImage || displayImages[0]) === img;
                 const isColorMatched = colorSpecificImages.includes(img);
                 return (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => setSelectedImage(img)}
-                    className={`relative w-16 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-neutral-100 ${
-                      selectedImage === img
-                        ? 'border-[#B38548] ring-2 ring-[#B38548]/30 scale-105 shadow-xs'
+                    onMouseEnter={() => setSelectedImage(img)}
+                    className={`relative w-16 h-20 sm:w-20 sm:h-26 rounded-2xl overflow-hidden border-2 transition-all shrink-0 bg-neutral-100 shadow-2xs ${
+                      isSelected
+                        ? 'border-[#B38548] ring-2 ring-[#B38548]/30 scale-102 shadow-sm'
                         : isColorMatched
-                        ? 'border-neutral-400 opacity-90 hover:opacity-100'
+                        ? 'border-neutral-300 opacity-90 hover:opacity-100 hover:border-neutral-500'
                         : 'border-[#EFE6D8] opacity-60 hover:opacity-100'
                     }`}
                   >
