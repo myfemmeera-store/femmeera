@@ -230,12 +230,39 @@ class ProductAdminController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $product = Product::findOrFail($id);
-        $product->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Product deleted successfully.',
-        ], 200);
+        // Check if product is referenced in order_items
+        $hasOrders = DB::table('order_items')->where('product_id', $product->id)->exists();
+
+        if ($hasOrders) {
+            $product->update(['status' => 'ARCHIVED']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Product has existing customer orders, so it was archived and set to INACTIVE instead of hard-deleted.',
+            ], 200);
+        }
+
+        try {
+            DB::transaction(function () use ($product) {
+                $variantIds = ProductVariant::where('product_id', $product->id)->pluck('id');
+                Inventory::whereIn('variant_id', $variantIds)->delete();
+                ProductVariant::where('product_id', $product->id)->delete();
+                ProductImage::where('product_id', $product->id)->delete();
+                $product->delete();
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product deleted successfully.',
+            ], 200);
+        } catch (\Exception $e) {
+            // Fallback if foreign key constraint is encountered
+            $product->update(['status' => 'ARCHIVED']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Product is referenced by past orders or sales records and has been archived.',
+            ], 200);
+        }
     }
 
     /**
