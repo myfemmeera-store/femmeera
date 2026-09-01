@@ -166,12 +166,12 @@ export default function EditProductPage() {
     setIsSavingProduct(true);
 
     try {
-      const formattedImagesPayload = productImages.map((img: any, idx) => ({
-        image_url: typeof img === 'string' ? img : (img?.image_url || img?.url || ''),
-        color_name: typeof img === 'string' ? null : (img?.color_name || null),
+      const formattedImagesPayload = productImages.map((img, idx) => ({
+        image_url: img.image_url,
+        color_name: img.color_name || null,
         is_primary: idx === 0,
         sort_order: idx + 1,
-      })).filter((img) => Boolean(img.image_url));
+      }));
 
       const res = await apiClient<Product>(`/admin/products/${productId}`, {
         method: 'PUT',

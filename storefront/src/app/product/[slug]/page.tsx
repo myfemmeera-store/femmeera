@@ -59,7 +59,7 @@ export default function ProductDetailPage() {
         setProduct(res.data);
         const defaultVar = res.data.variants?.[0] || null;
         setSelectedVariant(defaultVar);
-        const mainImg = res.data.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
+        const mainImg = res.data.images?.[0]?.image_url || '';
         setSelectedImage(mainImg);
         setIsWishlisted(wishlistService.isInWishlist(res.data.id));
       } else {
@@ -77,7 +77,7 @@ export default function ProductDetailPage() {
         if (matchedProd) {
           setProduct(matchedProd);
           setSelectedVariant(matchedProd.variants?.[0] || null);
-          const mainImg = matchedProd.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop';
+          const mainImg = matchedProd.images?.[0]?.image_url || '';
           setSelectedImage(mainImg);
           setIsWishlisted(wishlistService.isInWishlist(matchedProd.id));
         }
@@ -105,7 +105,7 @@ export default function ProductDetailPage() {
     }
 
     if (allColorNames.size === 0) {
-      const defaultImg = product?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
+      const defaultImg = product?.images?.[0]?.image_url || '';
       return [{ name: 'Standard', code: '#B38548', image: defaultImg, price: Number(product?.price || 2199), mrp: Number(product?.mrp || 2999) }];
     }
 
@@ -150,7 +150,7 @@ export default function ProductDetailPage() {
 
       // 4. Fallback to primary product image
       if (!colorImg) {
-        colorImg = product?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
+        colorImg = product?.images?.[0]?.image_url || '';
       }
 
       const price = Number(matchingVariant?.price || product?.price || 2199);
@@ -178,10 +178,7 @@ export default function ProductDetailPage() {
   // Color-specific image gallery (filters to ONLY images matching selectedColor section from admin)
   const colorSpecificImages = React.useMemo(() => {
     if (!product?.images || product.images.length === 0) {
-      return [
-        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1200&auto=format&fit=crop',
-      ];
+      return [];
     }
     const cleanSelected = (selectedColor || '').trim().toLowerCase();
 

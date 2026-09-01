@@ -128,22 +128,23 @@ class ProductAdminController extends Controller
 
                 if (is_array($img)) {
                     $imgUrl = $img['image_url'] ?? $img['url'] ?? null;
-                    if (is_array($imgUrl)) {
-                        $imgUrl = $imgUrl['url'] ?? $imgUrl['image_url'] ?? (is_string(reset($imgUrl)) ? reset($imgUrl) : null);
-                    }
                     $colorName = $img['color_name'] ?? null;
-                    if (is_array($colorName)) {
-                        $colorName = is_string(reset($colorName)) ? reset($colorName) : null;
+
+                    if (is_array($imgUrl)) {
+                        $imgUrl = $imgUrl['image_url'] ?? $imgUrl['url'] ?? null;
                     }
-                } else if (is_string($img)) {
+                    if (is_array($colorName)) {
+                        $colorName = $colorName['color_name'] ?? null;
+                    }
+                } elseif (is_string($img)) {
                     $imgUrl = $img;
                 }
 
-                if (is_string($imgUrl) && !empty(trim($imgUrl))) {
+                if (!empty($imgUrl) && is_string($imgUrl)) {
                     ProductImage::create([
                         'product_id' => $product->id,
-                        'color_name' => is_string($colorName) ? trim($colorName) : null,
-                        'image_url' => trim($imgUrl),
+                        'color_name' => is_string($colorName) ? $colorName : null,
+                        'image_url' => $imgUrl,
                         'is_primary' => $idx === 0 ? 1 : 0,
                         'sort_order' => $idx + 1,
                     ]);
@@ -223,22 +224,23 @@ class ProductAdminController extends Controller
 
                 if (is_array($img)) {
                     $imgUrl = $img['image_url'] ?? $img['url'] ?? null;
-                    if (is_array($imgUrl)) {
-                        $imgUrl = $imgUrl['url'] ?? $imgUrl['image_url'] ?? (is_string(reset($imgUrl)) ? reset($imgUrl) : null);
-                    }
                     $colorName = $img['color_name'] ?? null;
-                    if (is_array($colorName)) {
-                        $colorName = is_string(reset($colorName)) ? reset($colorName) : null;
+
+                    if (is_array($imgUrl)) {
+                        $imgUrl = $imgUrl['image_url'] ?? $imgUrl['url'] ?? null;
                     }
-                } else if (is_string($img)) {
+                    if (is_array($colorName)) {
+                        $colorName = $colorName['color_name'] ?? null;
+                    }
+                } elseif (is_string($img)) {
                     $imgUrl = $img;
                 }
 
-                if (is_string($imgUrl) && !empty(trim($imgUrl))) {
+                if (!empty($imgUrl) && is_string($imgUrl)) {
                     ProductImage::create([
                         'product_id' => $product->id,
-                        'color_name' => is_string($colorName) ? trim($colorName) : null,
-                        'image_url' => trim($imgUrl),
+                        'color_name' => is_string($colorName) ? $colorName : null,
+                        'image_url' => $imgUrl,
                         'is_primary' => $idx === 0 ? 1 : 0,
                         'sort_order' => $idx + 1,
                     ]);
