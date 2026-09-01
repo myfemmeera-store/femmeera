@@ -428,7 +428,13 @@ export default function EditProductPage() {
           <p className="text-neutral-500">Upload high-resolution photos for each color section. Assign a color tag so photos display correctly on the storefront when customers click that color.</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {productImages.map((imgObj, idx) => {
-              const uniqueColors = Array.from(new Set(variants.map((v) => v.color).filter(Boolean)));
+              const uniqueColors = Array.from(
+                new Set([
+                  ...variants.map((v) => v.color).filter((c): c is string => Boolean(c && c.trim())),
+                  ...productImages.map((img) => img.color_name).filter((c): c is string => Boolean(c && c.trim())),
+                ])
+              );
+
               return (
                 <div key={idx} className="relative bg-neutral-100 rounded-xl overflow-hidden border border-neutral-200 group flex flex-col justify-between">
                   <div className="relative aspect-3/4 w-full">
@@ -448,11 +454,21 @@ export default function EditProductPage() {
                     )}
                   </div>
                   
-                  {/* Color Selector dropdown for this image */}
-                  <div className="p-2 bg-white border-t border-neutral-200">
+                  {/* Color Selector & Custom Input for this image */}
+                  <div className="p-2 bg-white border-t border-neutral-200 space-y-1.5">
                     <select
                       value={imgObj.color_name || ''}
-                      onChange={(e) => setImageColor(idx, e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '__custom__') {
+                          const newColor = prompt('Enter new color name for this photo (e.g. Soda Blue, Blush Pink):');
+                          if (newColor && newColor.trim()) {
+                            setImageColor(idx, newColor.trim());
+                          }
+                        } else {
+                          setImageColor(idx, val);
+                        }
+                      }}
                       className="w-full text-[11px] font-bold text-neutral-800 bg-neutral-50 border border-neutral-300 rounded-lg p-1 focus:ring-1 focus:ring-black"
                     >
                       <option value="">-- General / All Colors --</option>
@@ -461,6 +477,7 @@ export default function EditProductPage() {
                           {c} Photo
                         </option>
                       ))}
+                      <option value="__custom__">+ Enter Custom Color...</option>
                     </select>
                   </div>
                 </div>
