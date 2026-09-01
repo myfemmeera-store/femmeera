@@ -29,6 +29,7 @@ export interface ProductVariant {
   sku: string;
   size: string;
   color: string;
+  color_code?: string | null;
   price: number;
   mrp: number;
   stock: number;
@@ -40,6 +41,7 @@ export interface ProductImage {
   id: number;
   product_id: number;
   product_variant_id?: number | null;
+  color_name?: string | null;
   image_url: string;
   alt_text?: string | null;
   sort_order: number;

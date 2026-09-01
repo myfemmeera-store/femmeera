@@ -14,6 +14,7 @@ class ProductVariant extends Model
         'sku',
         'size',
         'color',
+        'color_code',
         'price',
         'mrp',
         'stock',

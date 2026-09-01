@@ -63,6 +63,7 @@ export default function EditProductPage() {
     sku: '',
     size: '',
     color: '',
+    color_code: '#000000',
     price: '',
     mrp: '',
     stock: '',
@@ -218,6 +219,7 @@ export default function EditProductPage() {
       sku: variant.sku,
       size: variant.size,
       color: variant.color,
+      color_code: variant.color_code || '#000000',
       price: variant.price.toString(),
       mrp: variant.mrp.toString(),
       stock: variant.stock.toString(),
@@ -237,6 +239,7 @@ export default function EditProductPage() {
           sku: editForm.sku,
           size: editForm.size,
           color: editForm.color,
+          color_code: editForm.color_code,
           price: parseFloat(editForm.price),
           mrp: parseFloat(editForm.mrp),
           stock: parseInt(editForm.stock, 10),
@@ -593,13 +596,30 @@ export default function EditProductPage() {
             required
           />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <Input
               label="Color Name"
               value={editForm.color}
               onChange={(e) => setEditForm({ ...editForm, color: e.target.value })}
               required
             />
+            <div>
+              <label className="text-xs font-bold text-neutral-700 block mb-1">Color Code (Hex)</label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                  value={editForm.color_code}
+                  onChange={(e) => setEditForm({ ...editForm, color_code: e.target.value })}
+                  className="w-9 h-9 rounded-lg border border-neutral-300 cursor-pointer p-0.5"
+                />
+                <input
+                  type="text"
+                  value={editForm.color_code}
+                  onChange={(e) => setEditForm({ ...editForm, color_code: e.target.value })}
+                  className="flex-1 px-2.5 py-1.5 border border-neutral-300 rounded-lg text-xs font-mono font-bold"
+                />
+              </div>
+            </div>
             <Input
               label="Size"
               value={editForm.size}

@@ -97,12 +97,13 @@ class ProductAdminController extends Controller
         // Attach variants if provided
         if ($request->has('variants') && is_array($request->input('variants'))) {
             foreach ($request->input('variants') as $v) {
-                $varSku = !empty($v['sku']) ? $v['sku'] : ($product->sku . '-' . strtoupper($v['size'] ?? 'FREE') . '-' . Str::random(3));
+                $varSku = !empty($v['sku']) ? $v['sku'] : ($product->sku . '-' . Str::slug($v['color'] ?? 'MULTI') . '-' . strtoupper($v['size'] ?? 'FREE') . '-' . Str::random(3));
                 $variant = ProductVariant::create([
                     'product_id' => $product->id,
                     'sku' => $varSku,
                     'size' => $v['size'] ?? 'Free Size',
                     'color' => $v['color'] ?? 'Multicolor',
+                    'color_code' => $v['color_code'] ?? null,
                     'mrp' => $v['mrp'] ?? 1999,
                     'price' => $v['price'] ?? 1499,
                     'stock' => $v['stock'] ?? 10,
@@ -119,13 +120,16 @@ class ProductAdminController extends Controller
             }
         }
 
-        // Attach uploaded images if provided
+        // Attach uploaded images if provided (supports strings or objects with image_url and color_name)
         if ($request->has('images') && is_array($request->input('images'))) {
             foreach ($request->input('images') as $idx => $img) {
                 $imgUrl = is_array($img) ? ($img['image_url'] ?? null) : $img;
+                $colorName = is_array($img) ? ($img['color_name'] ?? null) : null;
+
                 if (!empty($imgUrl)) {
                     ProductImage::create([
                         'product_id' => $product->id,
+                        'color_name' => $colorName,
                         'image_url' => $imgUrl,
                         'is_primary' => $idx === 0 ? 1 : 0,
                         'sort_order' => $idx + 1,
@@ -167,13 +171,47 @@ class ProductAdminController extends Controller
             'short_description' => $request->input('short_description'),
         ]);
 
+        // If variants array supplied, sync variants
+        if ($request->has('variants') && is_array($request->input('variants'))) {
+            $oldVariantIds = ProductVariant::where('product_id', $product->id)->pluck('id');
+            Inventory::whereIn('variant_id', $oldVariantIds)->delete();
+            ProductVariant::where('product_id', $product->id)->delete();
+
+            foreach ($request->input('variants') as $v) {
+                $varSku = !empty($v['sku']) ? $v['sku'] : ($product->sku . '-' . Str::slug($v['color'] ?? 'MULTI') . '-' . strtoupper($v['size'] ?? 'FREE') . '-' . Str::random(3));
+                $variant = ProductVariant::create([
+                    'product_id' => $product->id,
+                    'sku' => $varSku,
+                    'size' => $v['size'] ?? 'Free Size',
+                    'color' => $v['color'] ?? 'Multicolor',
+                    'color_code' => $v['color_code'] ?? null,
+                    'mrp' => $v['mrp'] ?? 1999,
+                    'price' => $v['price'] ?? 1499,
+                    'stock' => $v['stock'] ?? 10,
+                    'low_stock_threshold' => $v['low_stock_threshold'] ?? 5,
+                    'status' => 'ACTIVE',
+                ]);
+
+                Inventory::create([
+                    'variant_id' => $variant->id,
+                    'available_quantity' => $v['stock'] ?? 10,
+                    'reserved_quantity' => 0,
+                    'low_stock_threshold' => 5,
+                ]);
+            }
+        }
+
         // If images array supplied, sync images
         if ($request->has('images') && is_array($request->input('images'))) {
             ProductImage::where('product_id', $product->id)->delete();
-            foreach ($request->input('images') as $idx => $imgUrl) {
+            foreach ($request->input('images') as $idx => $img) {
+                $imgUrl = is_array($img) ? ($img['image_url'] ?? null) : $img;
+                $colorName = is_array($img) ? ($img['color_name'] ?? null) : null;
+
                 if (!empty($imgUrl)) {
                     ProductImage::create([
                         'product_id' => $product->id,
+                        'color_name' => $colorName,
                         'image_url' => $imgUrl,
                         'is_primary' => $idx === 0 ? 1 : 0,
                         'sort_order' => $idx + 1,
@@ -300,7 +338,7 @@ class ProductAdminController extends Controller
             }
         }
 
-        $variant->update($request->only(['sku', 'size', 'color', 'price', 'mrp', 'stock', 'status']));
+        $variant->update($request->only(['sku', 'size', 'color', 'color_code', 'price', 'mrp', 'stock', 'status']));
 
         if ($request->has('stock')) {
             Inventory::where('variant_id', $variant->id)->update([

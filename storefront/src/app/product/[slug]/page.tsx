@@ -108,15 +108,99 @@ export default function ProductDetailPage() {
     );
   }
 
-  const price = selectedVariant?.price || product.variants?.[0]?.price || 2199;
-  const colors = Array.from(new Set(product.variants?.map((v) => v.color) || ['Standard']));
-  const sizes = Array.from(new Set(product.variants?.map((v) => v.size) || ['M']));
+  // Color options derived from product variants or default
+  const colorOptions = React.useMemo(() => {
+    if (!product?.variants || product.variants.length === 0) {
+      return [{ name: 'Standard', code: '#B38548' }];
+    }
+    const map = new Map<string, string>();
+    product.variants.forEach((v) => {
+      if (v.color && !map.has(v.color)) {
+        const hex = v.color_code || (
+          v.color.toLowerCase() === 'beige' ? '#E6D7C3' :
+          v.color.toLowerCase() === 'black' ? '#222222' :
+          v.color.toLowerCase() === 'white' ? '#FFFFFF' :
+          v.color.toLowerCase() === 'ruby red' || v.color.toLowerCase() === 'red' ? '#E0115F' :
+          v.color.toLowerCase() === 'royal blue' || v.color.toLowerCase() === 'blue' ? '#002366' :
+          '#B38548'
+        );
+        map.set(v.color, hex);
+      }
+    });
+    return Array.from(map.entries()).map(([name, code]) => ({ name, code }));
+  }, [product?.variants]);
+
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [selectedSize, setSelectedSize] = useState<string>('');
+
+  // Initial color setup on product load
+  useEffect(() => {
+    if (colorOptions.length > 0 && (!selectedColor || !colorOptions.some(c => c.name === selectedColor))) {
+      setSelectedColor(colorOptions[0].name);
+    }
+  }, [colorOptions]);
+
+  // Color-specific image gallery
+  const colorSpecificImages = React.useMemo(() => {
+    if (!product?.images || product.images.length === 0) {
+      return [
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1200&auto=format&fit=crop',
+      ];
+    }
+    const matching = product.images.filter((img) => img.color_name === selectedColor);
+    if (matching.length > 0) {
+      return matching.map((img) => img.image_url);
+    }
+    return product.images.map((img) => img.image_url);
+  }, [product?.images, selectedColor]);
+
+  // Sync main stage image when color changes
+  useEffect(() => {
+    if (colorSpecificImages.length > 0) {
+      setSelectedImage(colorSpecificImages[0]);
+    }
+  }, [colorSpecificImages]);
+
+  // Sizes available for the selected color
+  const availableSizes = React.useMemo(() => {
+    if (!product?.variants) return ['M'];
+    const matchingVars = product.variants.filter((v) => v.color === selectedColor);
+    if (matchingVars.length === 0) {
+      return Array.from(new Set(product.variants.map((v) => v.size)));
+    }
+    return Array.from(new Set(matchingVars.map((v) => v.size)));
+  }, [product?.variants, selectedColor]);
+
+  // Initial size setup
+  useEffect(() => {
+    if (availableSizes.length > 0 && (!selectedSize || !availableSizes.includes(selectedSize))) {
+      setSelectedSize(availableSizes[0]);
+    }
+  }, [availableSizes]);
+
+  // Selected variant matching Color + Size
+  const activeVariant = React.useMemo(() => {
+    if (!product?.variants) return null;
+    return (
+      product.variants.find((v) => v.color === selectedColor && v.size === selectedSize) ||
+      product.variants.find((v) => v.color === selectedColor) ||
+      product.variants[0]
+    );
+  }, [product?.variants, selectedColor, selectedSize]);
+
+  const price = activeVariant?.price || product.variants?.[0]?.price || 2199;
+  const mrp = activeVariant?.mrp || product.variants?.[0]?.mrp || 2999;
+  const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : false;
 
   const handleAddToCart = async () => {
-    const targetVariant = selectedVariant || product.variants?.[0];
-    if (!targetVariant?.id) return;
+    if (!activeVariant?.id) return;
+    if (isOutOfStock) {
+      alert('Sorry, this variant is currently out of stock.');
+      return;
+    }
 
-    const res = await cartService.addItem(targetVariant.id, 1);
+    const res = await cartService.addItem(activeVariant.id, 1);
     if (res.success) {
       window.dispatchEvent(new Event('femmeera-cart-updated'));
       setAddedToast(true);
@@ -127,8 +211,11 @@ export default function ProductDetailPage() {
   };
 
   const handleBuyNow = async () => {
-    const targetVariant = selectedVariant || product.variants?.[0];
-    if (!targetVariant?.id) return;
+    if (!activeVariant?.id) return;
+    if (isOutOfStock) {
+      alert('Sorry, this variant is currently out of stock.');
+      return;
+    }
 
     try {
       const currentCart = await cartService.getCart();
@@ -141,7 +228,7 @@ export default function ProductDetailPage() {
       // Ignore clear error
     }
 
-    const res = await cartService.addItem(targetVariant.id, 1);
+    const res = await cartService.addItem(activeVariant.id, 1);
     if (res.success) {
       window.dispatchEvent(new Event('femmeera-cart-updated'));
       router.push('/checkout');
@@ -169,19 +256,10 @@ export default function ProductDetailPage() {
         setShareToast(true);
         setTimeout(() => setShareToast(false), 3000);
       } catch (err) {
-        // Fallback alert
         alert('Product link copied to clipboard!');
       }
     }
   };
-
-  const images = product.images && product.images.length > 0
-    ? product.images.map((i) => i.image_url)
-    : [
-        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1200&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop'
-      ];
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] py-6 px-4 sm:px-6 lg:px-8 space-y-12">
@@ -198,15 +276,15 @@ export default function ProductDetailPage() {
           <span className="font-semibold text-neutral-900">{product.name}</span>
         </nav>
 
-        {/* Product Viewer Grid - Image 5 Reference */}
+        {/* Product Viewer Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           
-          {/* Gallery Column: Thumbnails + Main View */}
+          {/* Gallery Column: Vertical Thumbnails + Main Stage */}
           <div className="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-4">
             
-            {/* Vertical Thumbnails */}
+            {/* Vertical Thumbnails (Showing only photos for selected color) */}
             <div className="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto shrink-0">
-              {images.map((img, idx) => (
+              {colorSpecificImages.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(img)}
@@ -214,14 +292,14 @@ export default function ProductDetailPage() {
                     selectedImage === img ? 'border-[#B38548] ring-2 ring-[#B38548]/20' : 'border-[#EFE6D8] opacity-80 hover:opacity-100'
                   }`}
                 >
-                  <Image src={img} alt="" fill className="object-cover" />
+                  <Image src={img} alt={`${product.name} thumbnail`} fill className="object-cover" />
                 </button>
               ))}
             </div>
 
             {/* Main Stage Image */}
             <div className="relative flex-1 aspect-3/4 sm:aspect-4/5 bg-white rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
-              <Image src={selectedImage || images[0]} alt={product.name} fill priority className="object-cover" />
+              <Image src={selectedImage || colorSpecificImages[0]} alt={product.name} fill priority className="object-cover" />
 
               <span className="absolute top-4 left-4 bg-neutral-900 text-white text-[9px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
                 NEW
@@ -265,40 +343,58 @@ export default function ProductDetailPage() {
                 <span className="font-sans font-extrabold text-2xl text-neutral-900">
                   ₹{price.toLocaleString('en-IN')}
                 </span>
+                {mrp > price && (
+                  <span className="text-sm text-neutral-400 line-through">
+                    ₹{mrp.toLocaleString('en-IN')}
+                  </span>
+                )}
                 <span className="text-xs text-neutral-400">Inclusive of all taxes</span>
               </div>
 
               {/* Prepaid Offer Callout */}
               <div className="bg-[#FAF3E7] border border-[#E8DEC8] rounded-xl p-3 flex items-center space-x-2 text-xs text-[#7A6240]">
                 <Sparkles className="w-4 h-4 text-[#B38548] shrink-0" />
-                <span>Get it for <strong>₹1,979</strong> with 10% Off On Prepaid Orders</span>
+                <span>Get it for <strong>₹{Math.round(price * 0.9).toLocaleString('en-IN')}</strong> with 10% Off On Prepaid Orders</span>
               </div>
             </div>
 
-            {/* Color Selection */}
+            {/* Color Selection Swatches */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-neutral-900 block">COLOR: {selectedVariant?.color || 'Beige'}</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-neutral-900 block">
+                  COLOR: <span className="text-[#B38548] font-bold uppercase tracking-wider">{selectedColor}</span>
+                </label>
+              </div>
+
               <div className="flex items-center space-x-3">
-                {colors.map((c, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      const match = product.variants?.find((v) => v.color === c);
-                      if (match) setSelectedVariant(match);
-                    }}
-                    className={`w-7 h-7 rounded-full border-2 transition-all ${
-                      selectedVariant?.color === c ? 'border-[#B38548] ring-2 ring-[#B38548]/30 scale-110' : 'border-neutral-300'
-                    }`}
-                    style={{ backgroundColor: c.toLowerCase() === 'beige' ? '#E6D7C3' : c.toLowerCase() === 'black' ? '#222' : '#FFF' }}
-                  />
-                ))}
+                {colorOptions.map((c) => {
+                  const isSelected = selectedColor === c.name;
+                  return (
+                    <button
+                      key={c.name}
+                      type="button"
+                      onClick={() => setSelectedColor(c.name)}
+                      title={c.name}
+                      className={`relative w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${
+                        isSelected ? 'border-[#B38548] ring-2 ring-[#B38548]/40 scale-110 shadow-md' : 'border-neutral-300 hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: c.code }}
+                    >
+                      {isSelected && (
+                        <span className={`w-2.5 h-2.5 rounded-full ${c.code.toLowerCase() === '#ffffff' || c.code.toLowerCase() === 'white' ? 'bg-black' : 'bg-white'}`} />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Size Selection */}
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs">
-                <label className="font-bold text-neutral-900">SIZE:</label>
+                <label className="font-bold text-neutral-900">
+                  SIZE: {selectedSize && <span className="text-[#B38548] font-bold">{selectedSize}</span>}
+                </label>
                 <button className="text-[#B38548] hover:underline font-semibold flex items-center gap-1">
                   <Ruler className="w-3.5 h-3.5" />
                   <span>Size Guide</span>
@@ -306,18 +402,20 @@ export default function ProductDetailPage() {
               </div>
 
               <div className="grid grid-cols-6 gap-2">
-                {sizes.map((s) => {
-                  const isSelected = selectedVariant?.size === s;
+                {availableSizes.map((s) => {
+                  const matchingVar = product.variants?.find((v) => v.color === selectedColor && v.size === s);
+                  const isSelected = selectedSize === s;
+                  const varOutOfStock = matchingVar ? matchingVar.stock <= 0 : false;
+
                   return (
                     <button
                       key={s}
-                      onClick={() => {
-                        const match = product.variants?.find((v) => v.size === s);
-                        if (match) setSelectedVariant(match);
-                      }}
-                      className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${
+                      onClick={() => setSelectedSize(s)}
+                      className={`relative py-2.5 text-xs font-bold rounded-xl border transition-all ${
                         isSelected
-                          ? 'border-[#B38548] bg-[#FAF3E7] text-[#B38548]'
+                          ? 'border-[#B38548] bg-[#FAF3E7] text-[#B38548] shadow-xs'
+                          : varOutOfStock
+                          ? 'border-neutral-200 bg-neutral-100 text-neutral-400 opacity-70 line-through'
                           : 'border-[#EFE6D8] bg-white text-neutral-700 hover:border-neutral-400'
                       }`}
                     >
@@ -326,6 +424,12 @@ export default function ProductDetailPage() {
                   );
                 })}
               </div>
+
+              {isOutOfStock && (
+                <p className="text-xs font-bold text-rose-600 pt-1">
+                  ⚠️ This Color ({selectedColor}) and Size ({selectedSize}) combination is currently Out of Stock.
+                </p>
+              )}
             </div>
 
             {/* Delivery Estimate Box */}
@@ -349,15 +453,25 @@ export default function ProductDetailPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleAddToCart}
-                  className="py-3.5 px-4 bg-[#B38548] hover:bg-[#966C32] text-white font-sans font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center space-x-2"
+                  disabled={isOutOfStock}
+                  className={`py-3.5 px-4 font-sans font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 ${
+                    isOutOfStock
+                      ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed shadow-none'
+                      : 'bg-[#B38548] hover:bg-[#966C32] text-white'
+                  }`}
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>ADD TO BAG</span>
+                  <span>{isOutOfStock ? 'OUT OF STOCK' : 'ADD TO BAG'}</span>
                 </button>
 
                 <button
                   onClick={handleBuyNow}
-                  className="py-3.5 px-4 bg-white border border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white font-sans font-bold text-xs uppercase tracking-wider rounded-xl transition-all"
+                  disabled={isOutOfStock}
+                  className={`py-3.5 px-4 font-sans font-bold text-xs uppercase tracking-wider rounded-xl transition-all ${
+                    isOutOfStock
+                      ? 'bg-neutral-100 border border-neutral-300 text-neutral-400 cursor-not-allowed'
+                      : 'bg-white border border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white'
+                  }`}
                 >
                   BUY NOW
                 </button>

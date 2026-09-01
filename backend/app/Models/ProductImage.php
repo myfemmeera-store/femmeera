@@ -12,6 +12,7 @@ class ProductImage extends Model
     protected $fillable = [
         'product_id',
         'product_variant_id',
+        'color_name',
         'image_url',
         'is_primary',
         'sort_order',
