@@ -127,28 +127,23 @@ class ProductAdminController extends Controller
                 $colorName = null;
 
                 if (is_array($img)) {
-                    $rawUrl = $img['image_url'] ?? $img['url'] ?? $img['path'] ?? null;
-                    if (is_array($rawUrl)) {
-                        $imgUrl = (string)($rawUrl['url'] ?? $rawUrl['image_url'] ?? reset($rawUrl));
-                    } elseif (is_string($rawUrl)) {
-                        $imgUrl = $rawUrl;
+                    $imgUrl = $img['image_url'] ?? $img['url'] ?? null;
+                    if (is_array($imgUrl)) {
+                        $imgUrl = $imgUrl['url'] ?? $imgUrl['image_url'] ?? (is_string(reset($imgUrl)) ? reset($imgUrl) : null);
                     }
-
-                    $rawColor = $img['color_name'] ?? $img['color'] ?? null;
-                    if (is_array($rawColor)) {
-                        $colorName = (string)($rawColor['name'] ?? reset($rawColor));
-                    } elseif (is_string($rawColor)) {
-                        $colorName = $rawColor;
+                    $colorName = $img['color_name'] ?? null;
+                    if (is_array($colorName)) {
+                        $colorName = is_string(reset($colorName)) ? reset($colorName) : null;
                     }
-                } elseif (is_string($img)) {
+                } else if (is_string($img)) {
                     $imgUrl = $img;
                 }
 
-                if (!empty($imgUrl) && is_string($imgUrl)) {
+                if (is_string($imgUrl) && !empty(trim($imgUrl))) {
                     ProductImage::create([
                         'product_id' => $product->id,
-                        'color_name' => $colorName,
-                        'image_url' => $imgUrl,
+                        'color_name' => is_string($colorName) ? trim($colorName) : null,
+                        'image_url' => trim($imgUrl),
                         'is_primary' => $idx === 0 ? 1 : 0,
                         'sort_order' => $idx + 1,
                     ]);
@@ -227,28 +222,23 @@ class ProductAdminController extends Controller
                 $colorName = null;
 
                 if (is_array($img)) {
-                    $rawUrl = $img['image_url'] ?? $img['url'] ?? $img['path'] ?? null;
-                    if (is_array($rawUrl)) {
-                        $imgUrl = (string)($rawUrl['url'] ?? $rawUrl['image_url'] ?? reset($rawUrl));
-                    } elseif (is_string($rawUrl)) {
-                        $imgUrl = $rawUrl;
+                    $imgUrl = $img['image_url'] ?? $img['url'] ?? null;
+                    if (is_array($imgUrl)) {
+                        $imgUrl = $imgUrl['url'] ?? $imgUrl['image_url'] ?? (is_string(reset($imgUrl)) ? reset($imgUrl) : null);
                     }
-
-                    $rawColor = $img['color_name'] ?? $img['color'] ?? null;
-                    if (is_array($rawColor)) {
-                        $colorName = (string)($rawColor['name'] ?? reset($rawColor));
-                    } elseif (is_string($rawColor)) {
-                        $colorName = $rawColor;
+                    $colorName = $img['color_name'] ?? null;
+                    if (is_array($colorName)) {
+                        $colorName = is_string(reset($colorName)) ? reset($colorName) : null;
                     }
-                } elseif (is_string($img)) {
+                } else if (is_string($img)) {
                     $imgUrl = $img;
                 }
 
-                if (!empty($imgUrl) && is_string($imgUrl)) {
+                if (is_string($imgUrl) && !empty(trim($imgUrl))) {
                     ProductImage::create([
                         'product_id' => $product->id,
-                        'color_name' => $colorName,
-                        'image_url' => $imgUrl,
+                        'color_name' => is_string($colorName) ? trim($colorName) : null,
+                        'image_url' => trim($imgUrl),
                         'is_primary' => $idx === 0 ? 1 : 0,
                         'sort_order' => $idx + 1,
                     ]);
