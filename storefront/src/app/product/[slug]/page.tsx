@@ -359,27 +359,24 @@ export default function ProductDetailPage() {
         {/* Product Viewer Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           
-          {/* Gallery Column: Vertical Thumbnails + Main Stage */}
-          <div className="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-4">
+          {/* Gallery Column: Main Stage Frame + Small Image Thumbnails on the Right */}
+          <div className="lg:col-span-7 flex flex-col sm:flex-row gap-4 items-start">
             
-            {/* Vertical Thumbnails (Showing only photos for selected color) */}
-            <div className="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto shrink-0">
-              {colorSpecificImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImage(img)}
-                  className={`relative w-16 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
-                    selectedImage === img ? 'border-[#B38548] ring-2 ring-[#B38548]/20' : 'border-[#EFE6D8] opacity-80 hover:opacity-100'
-                  }`}
-                >
-                  <Image src={img} alt={`${product.name} thumbnail`} fill className="object-cover" />
-                </button>
-              ))}
-            </div>
-
-            {/* Main Stage Image */}
-            <div className="relative flex-1 aspect-3/4 sm:aspect-4/5 bg-white rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
-              <Image src={hoveredColorImage || selectedImage || colorSpecificImages[0]} alt={product.name} fill priority className="object-cover transition-all duration-300" />
+            {/* Main Stage Image (Left) */}
+            <div className="relative flex-1 w-full aspect-3/4 sm:aspect-4/5 bg-white rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
+              {(hoveredColorImage || selectedImage || colorSpecificImages[0]) ? (
+                <Image
+                  src={hoveredColorImage || selectedImage || colorSpecificImages[0]}
+                  alt={product.name}
+                  fill
+                  priority
+                  className="object-cover transition-all duration-300"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-100 text-neutral-400">
+                  <span className="text-xs font-semibold">No Image Available</span>
+                </div>
+              )}
 
               <span className="absolute top-4 left-4 bg-neutral-900 text-white text-[9px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
                 NEW
@@ -395,6 +392,34 @@ export default function ProductDetailPage() {
                 <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-rose-600 text-rose-600' : ''}`} />
               </button>
             </div>
+
+            {/* Small Image Thumbnails (Right Side of Main Stage Frame) */}
+            {colorSpecificImages.length > 0 && (
+              <div className="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto shrink-0 max-h-[500px] scrollbar-none w-full sm:w-auto">
+                {colorSpecificImages.map((img, idx) => {
+                  const isActive = (selectedImage === img || (!selectedImage && idx === 0));
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedImage(img)}
+                      onMouseEnter={() => setSelectedImage(img)}
+                      className={`relative w-16 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                        isActive
+                          ? 'border-[#B38548] ring-2 ring-[#B38548]/30 scale-105 shadow-sm'
+                          : 'border-[#EFE6D8] opacity-75 hover:opacity-100'
+                      }`}
+                    >
+                      {img ? (
+                        <Image src={img} alt={`${product.name} thumbnail ${idx + 1}`} fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-neutral-100 flex items-center justify-center text-[9px] text-neutral-400">No Image</div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
           </div>
 
@@ -455,10 +480,12 @@ export default function ProductDetailPage() {
                       type="button"
                       onClick={() => {
                         setSelectedColor(c.name);
-                        setSelectedImage(c.image);
+                        if (c.image) setSelectedImage(c.image);
                         setHoveredColorImage(null);
                       }}
-                      onMouseEnter={() => setHoveredColorImage(c.image)}
+                      onMouseEnter={() => {
+                        if (c.image) setHoveredColorImage(c.image);
+                      }}
                       onMouseLeave={() => setHoveredColorImage(null)}
                       className={`relative shrink-0 w-24 sm:w-28 flex flex-col items-center bg-white rounded-2xl p-2 border-2 transition-all cursor-pointer ${
                         isSelected
@@ -468,12 +495,18 @@ export default function ProductDetailPage() {
                     >
                       {/* Color Preview Image Box */}
                       <div className="relative w-full aspect-3/4 bg-neutral-100 rounded-xl overflow-hidden mb-2 border border-neutral-100">
-                        <Image
-                          src={c.image}
-                          alt={`${product.name} - ${c.name}`}
-                          fill
-                          className="object-cover"
-                        />
+                        {c.image ? (
+                          <Image
+                            src={c.image}
+                            alt={`${product.name} - ${c.name}`}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-200 text-neutral-500 text-[10px] font-medium">
+                            No Photo
+                          </div>
+                        )}
                         {/* Color Swatch Dot Badge */}
                         <span
                           className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full border border-white shadow-xs"
