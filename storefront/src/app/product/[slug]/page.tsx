@@ -164,8 +164,8 @@ export default function ProductDetailPage() {
     );
   }, [product?.variants, selectedColor, selectedSize]);
 
-  const price = activeVariant?.price || product?.variants?.[0]?.price || 2199;
-  const mrp = activeVariant?.mrp || product?.variants?.[0]?.mrp || 2999;
+  const price = Number(activeVariant?.price || product?.variants?.[0]?.price || product?.price || 2199);
+  const mrp = Number(activeVariant?.mrp || product?.variants?.[0]?.mrp || product?.mrp || 2999);
   const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : false;
 
   if (loading) {
@@ -379,7 +379,7 @@ export default function ProductDetailPage() {
                       style={{ backgroundColor: c.code }}
                     >
                       {isSelected && (
-                        <span className={`w-2.5 h-2.5 rounded-full ${c.code.toLowerCase() === '#ffffff' || c.code.toLowerCase() === 'white' ? 'bg-black' : 'bg-white'}`} />
+                        <span className={`w-2.5 h-2.5 rounded-full ${c.code?.toLowerCase() === '#ffffff' || c.code?.toLowerCase() === 'white' ? 'bg-black' : 'bg-white'}`} />
                       )}
                     </button>
                   );
