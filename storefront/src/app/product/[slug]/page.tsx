@@ -87,67 +87,85 @@ export default function ProductDetailPage() {
     });
   }, [slug]);
 
-  // Color options derived from product variants or default, enriched with image & price info
+  // Color options derived from product variants & images, enriched with image & price info
   const colorOptions = React.useMemo(() => {
-    if (!product?.variants || product.variants.length === 0) {
+    // Collect all unique colors from variants and images
+    const allColorNames = new Set<string>();
+
+    if (product?.variants && product.variants.length > 0) {
+      product.variants.forEach((v) => {
+        if (v.color) allColorNames.add(v.color.trim());
+      });
+    }
+
+    if (product?.images && product.images.length > 0) {
+      product.images.forEach((img) => {
+        if (img.color_name) allColorNames.add(img.color_name.trim());
+      });
+    }
+
+    if (allColorNames.size === 0) {
       const defaultImg = product?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
       return [{ name: 'Standard', code: '#B38548', image: defaultImg, price: Number(product?.price || 2199), mrp: Number(product?.mrp || 2999) }];
     }
 
-    const colorMap = new Map<string, { code: string; image: string; price: number; mrp: number }>();
+    const colorList: { name: string; code: string; image: string; price: number; mrp: number }[] = [];
 
-    product.variants.forEach((v) => {
-      if (v.color && !colorMap.has(v.color)) {
-        const cleanColor = v.color.trim().toLowerCase();
+    Array.from(allColorNames).forEach((colorName, idx) => {
+      const cleanColor = colorName.trim().toLowerCase();
 
-        const hex = v.color_code || (
-          cleanColor === 'beige' ? '#E6D7C3' :
-          cleanColor === 'black' ? '#222222' :
-          cleanColor === 'white' ? '#FFFFFF' :
-          cleanColor === 'peach' ? '#FFDAB9' :
-          cleanColor === 'pink' ? '#FFC0CB' :
-          cleanColor === 'ruby red' || cleanColor === 'red' ? '#E0115F' :
-          cleanColor === 'royal blue' || cleanColor === 'blue' ? '#002366' :
-          cleanColor === 'green' || cleanColor === 'emerald' ? '#50C878' :
-          cleanColor === 'yellow' || cleanColor === 'mustard' ? '#FFDB58' :
-          cleanColor === 'purple' || cleanColor === 'lavender' ? '#E6E6FA' :
-          '#B38548'
-        );
+      // Find matching variant for hex code, price, MRP
+      const matchingVariant = product?.variants?.find((v) => v.color && v.color.trim().toLowerCase() === cleanColor);
 
-        const currentIndex = colorMap.size;
+      const hex = matchingVariant?.color_code || (
+        cleanColor === 'beige' ? '#E6D7C3' :
+        cleanColor === 'black' ? '#222222' :
+        cleanColor === 'white' ? '#FFFFFF' :
+        cleanColor === 'peach' ? '#FFDAB9' :
+        cleanColor === 'pink' ? '#FFC0CB' :
+        cleanColor === 'ruby red' || cleanColor === 'red' ? '#E0115F' :
+        cleanColor === 'royal blue' || cleanColor === 'blue' ? '#002366' :
+        cleanColor === 'green' || cleanColor === 'emerald' ? '#50C878' :
+        cleanColor === 'yellow' || cleanColor === 'mustard' ? '#FFDB58' :
+        cleanColor === 'purple' || cleanColor === 'lavender' ? '#E6E6FA' :
+        '#B38548'
+      );
 
-        // 1. Exact match by color_name tag on ProductImage
-        let matchedImg = product.images?.find((img) => 
-          img.color_name && img.color_name.trim().toLowerCase() === cleanColor
+      // 1. Exact match by color_name tag from admin upload section
+      let colorImg = product?.images?.find((img) => 
+        img.color_name && img.color_name.trim().toLowerCase() === cleanColor
+      )?.image_url;
+
+      // 2. Partial match on image_url filename (e.g. pink.jpg, black.png)
+      if (!colorImg && product?.images) {
+        colorImg = product.images.find((img) => 
+          img.image_url && img.image_url.toLowerCase().includes(cleanColor)
         )?.image_url;
-
-        // 2. Partial match on image_url path (e.g. peach.jpg, black.png)
-        if (!matchedImg && product.images) {
-          matchedImg = product.images.find((img) => 
-            img.image_url && img.image_url.toLowerCase().includes(cleanColor)
-          )?.image_url;
-        }
-
-        // 3. Index-based match if images array is ordered by color
-        if (!matchedImg && product.images && product.images[currentIndex]) {
-          matchedImg = product.images[currentIndex].image_url;
-        }
-
-        // 4. Fallback to primary product image
-        if (!matchedImg) {
-          matchedImg = product.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
-        }
-
-        colorMap.set(v.color, {
-          code: hex,
-          image: matchedImg,
-          price: Number(v.price || product.price || 2199),
-          mrp: Number(v.mrp || product.mrp || 2999)
-        });
       }
+
+      // 3. Index positional fallback match
+      if (!colorImg && product?.images && product.images[idx]) {
+        colorImg = product.images[idx].image_url;
+      }
+
+      // 4. Fallback to primary product image
+      if (!colorImg) {
+        colorImg = product?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
+      }
+
+      const price = Number(matchingVariant?.price || product?.price || 2199);
+      const mrp = Number(matchingVariant?.mrp || product?.mrp || 2999);
+
+      colorList.push({
+        name: colorName,
+        code: hex,
+        image: colorImg,
+        price,
+        mrp,
+      });
     });
 
-    return Array.from(colorMap.entries()).map(([name, data]) => ({ name, ...data }));
+    return colorList;
   }, [product?.variants, product?.images, product?.price, product?.mrp]);
 
   // Initial color setup on product load
@@ -157,7 +175,7 @@ export default function ProductDetailPage() {
     }
   }, [colorOptions]);
 
-  // Color-specific image gallery (filters to ONLY images matching selectedColor)
+  // Color-specific image gallery (filters to ONLY images matching selectedColor section from admin)
   const colorSpecificImages = React.useMemo(() => {
     if (!product?.images || product.images.length === 0) {
       return [
@@ -167,12 +185,12 @@ export default function ProductDetailPage() {
     }
     const cleanSelected = (selectedColor || '').trim().toLowerCase();
 
-    // 1. Filter images tagged with selected color_name
-    const exactMatches = product.images.filter((img) => 
+    // 1. Filter images uploaded into this specific color section in admin
+    const colorSectionMatches = product.images.filter((img) => 
       img.color_name && img.color_name.trim().toLowerCase() === cleanSelected
     );
-    if (exactMatches.length > 0) {
-      return exactMatches.map((img) => img.image_url);
+    if (colorSectionMatches.length > 0) {
+      return colorSectionMatches.map((img) => img.image_url);
     }
 
     // 2. Filter images whose image_url contains color name

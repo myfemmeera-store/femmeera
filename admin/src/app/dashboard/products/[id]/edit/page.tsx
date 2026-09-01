@@ -45,7 +45,12 @@ export default function EditProductPage() {
     short_description: '',
   });
 
-  const [productImages, setProductImages] = useState<any[]>([]);
+  interface ProductImageItem {
+    image_url: string;
+    color_name: string | null;
+  }
+
+  const [productImages, setProductImages] = useState<ProductImageItem[]>([]);
 
   // Variant Generator State
   const [generatorModalOpen, setGeneratorModalOpen] = useState(false);
@@ -97,10 +102,12 @@ export default function EditProductPage() {
         });
 
         if (p.images && p.images.length > 0) {
-          setProductImages(p.images.map((img) => ({
-            image_url: img.image_url,
-            color_name: img.color_name || null,
-          })));
+          setProductImages(
+            p.images.map((img) => ({
+              image_url: img.image_url,
+              color_name: img.color_name || null,
+            }))
+          );
         }
       } else {
         setError(prodRes.message || 'Product not found.');
@@ -148,11 +155,24 @@ export default function EditProductPage() {
     setProductImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const setImageColor = (index: number, colorName: string) => {
+    setProductImages((prev) =>
+      prev.map((img, i) => (i === index ? { ...img, color_name: colorName || null } : img))
+    );
+  };
+
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingProduct(true);
 
     try {
+      const formattedImagesPayload = productImages.map((img, idx) => ({
+        image_url: img.image_url,
+        color_name: img.color_name || null,
+        is_primary: idx === 0,
+        sort_order: idx + 1,
+      }));
+
       const res = await apiClient<Product>(`/admin/products/${productId}`, {
         method: 'PUT',
         body: JSON.stringify({
@@ -164,7 +184,7 @@ export default function EditProductPage() {
           category_id: formData.category_id ? Number(formData.category_id) : null,
           description: formData.description,
           short_description: formData.short_description,
-          images: productImages,
+          images: formattedImagesPayload,
         }),
       });
 
@@ -402,52 +422,46 @@ export default function EditProductPage() {
         </form>
       </Card>
 
-      {/* 2. Product Photos & Media Manager */}
+      {/* 2. Product Photos & Media Gallery */}
       <Card title="2. Product Photos & Media Gallery">
         <div className="space-y-4 text-xs">
-          <p className="text-neutral-500">Upload multiple high-resolution photos. The first image will be set as the primary product cover.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <p className="text-neutral-500">Upload high-resolution photos for each color section. Assign a color tag so photos display correctly on the storefront when customers click that color.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {productImages.map((imgObj, idx) => {
-              const url = typeof imgObj === 'string' ? imgObj : imgObj.image_url;
-              const colorName = typeof imgObj === 'string' ? null : imgObj.color_name;
-              const availableColors = Array.from(new Set(product?.variants?.map((v) => v.color).filter(Boolean)));
-
+              const uniqueColors = Array.from(new Set(variants.map((v) => v.color).filter(Boolean)));
               return (
-                <div key={idx} className="relative aspect-3/4 bg-neutral-100 rounded-xl overflow-hidden border border-neutral-200 group">
-                  <Image src={url} alt={`Product ${idx + 1}`} fill className="object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(idx)}
-                    className="absolute top-2 right-2 p-1.5 bg-rose-600 text-white rounded-full opacity-90 hover:opacity-100 transition-opacity z-10"
-                    title="Remove Image"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-
-                  <div className="absolute bottom-2 left-2 right-2 flex flex-col gap-1 z-10">
-                    <select
-                      value={colorName || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setProductImages((prev) =>
-                          prev.map((item, i) => (i === idx ? { ...(typeof item === 'string' ? { image_url: item } : item), color_name: val || null } : item))
-                        );
-                      }}
-                      className="bg-neutral-900/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded border-0 focus:outline-none w-full shadow-xs"
+                <div key={idx} className="relative bg-neutral-100 rounded-xl overflow-hidden border border-neutral-200 group flex flex-col justify-between">
+                  <div className="relative aspect-3/4 w-full">
+                    <Image src={imgObj.image_url} alt={`Product ${idx + 1}`} fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-2 right-2 p-1.5 bg-rose-600 text-white rounded-full opacity-90 hover:opacity-100 transition-opacity z-10"
+                      title="Remove Image"
                     >
-                      <option value="">-- All Colors --</option>
-                      {availableColors.map((color) => (
-                        <option key={color} value={color}>
-                          {color}
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    {idx === 0 && (
+                      <span className="absolute top-2 left-2 bg-neutral-900 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                        Cover
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Color Selector dropdown for this image */}
+                  <div className="p-2 bg-white border-t border-neutral-200">
+                    <select
+                      value={imgObj.color_name || ''}
+                      onChange={(e) => setImageColor(idx, e.target.value)}
+                      className="w-full text-[11px] font-bold text-neutral-800 bg-neutral-50 border border-neutral-300 rounded-lg p-1 focus:ring-1 focus:ring-black"
+                    >
+                      <option value="">-- General / All Colors --</option>
+                      {uniqueColors.map((c) => (
+                        <option key={c} value={c}>
+                          {c} Photo
                         </option>
                       ))}
                     </select>
-
-                    {idx === 0 && (
-                      <span className="bg-amber-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider w-fit">
-                        Cover Photo
-                      </span>
-                    )}
                   </div>
                 </div>
               );
