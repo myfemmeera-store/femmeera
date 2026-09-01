@@ -109,6 +109,8 @@ export default function ProductDetailPage() {
       return [{ name: 'Standard', code: '#B38548', image: defaultImg, price: Number(product?.price || 2199), mrp: Number(product?.mrp || 2999) }];
     }
 
+    const hasAnyTaggedImages = product?.images?.some((img) => Boolean(img.color_name && img.color_name.trim()));
+
     const colorList: { name: string; code: string; image: string; price: number; mrp: number }[] = [];
 
     Array.from(allColorNames).forEach((colorName, idx) => {
@@ -131,24 +133,31 @@ export default function ProductDetailPage() {
         '#B38548'
       );
 
-      // 1. Exact match by color_name tag from admin upload section
+      // 1. Primary image with matching color_name
       let colorImg = product?.images?.find((img) => 
-        img.color_name && img.color_name.trim().toLowerCase() === cleanColor
+        img.color_name && img.color_name.trim().toLowerCase() === cleanColor && img.is_primary
       )?.image_url;
 
-      // 2. Partial match on image_url filename (e.g. pink.jpg, black.png)
+      // 2. Any image matching color_name tag from admin upload section
+      if (!colorImg && product?.images) {
+        colorImg = product.images.find((img) => 
+          img.color_name && img.color_name.trim().toLowerCase() === cleanColor
+        )?.image_url;
+      }
+
+      // 3. Match on image_url filename (e.g. pink.jpg, blue.png)
       if (!colorImg && product?.images) {
         colorImg = product.images.find((img) => 
           img.image_url && img.image_url.toLowerCase().includes(cleanColor)
         )?.image_url;
       }
 
-      // 3. Index positional fallback match
-      if (!colorImg && product?.images && product.images[idx]) {
+      // 4. Positional fallback ONLY if product images have no color tags assigned
+      if (!colorImg && !hasAnyTaggedImages && product?.images && product.images[idx]) {
         colorImg = product.images[idx].image_url;
       }
 
-      // 4. Fallback to primary product image
+      // 5. General fallback
       if (!colorImg) {
         colorImg = product?.images?.[0]?.image_url || '';
       }
@@ -175,7 +184,7 @@ export default function ProductDetailPage() {
     }
   }, [colorOptions]);
 
-  // Color-specific image gallery (filters to ONLY images matching selectedColor section from admin)
+  // Color-specific image gallery (STRICTLY displays images of selectedColor, excluding other colors)
   const colorSpecificImages = React.useMemo(() => {
     if (!product?.images || product.images.length === 0) {
       return [];
@@ -204,7 +213,13 @@ export default function ProductDetailPage() {
       return [activeColorCard.image];
     }
 
-    return product.images.map((img) => img.image_url);
+    // 4. Untagged images (exclude images tagged with DIFFERENT color names)
+    const untaggedImages = product.images.filter((img) => !img.color_name || !img.color_name.trim());
+    if (untaggedImages.length > 0) {
+      return untaggedImages.map((img) => img.image_url);
+    }
+
+    return [product.images[0].image_url];
   }, [product?.images, selectedColor, colorOptions]);
 
   // Sync main stage image when selectedColor changes
