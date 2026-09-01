@@ -145,21 +145,16 @@ export default function ProductDetailPage() {
         )?.image_url;
       }
 
-      // 3. Match on image_url filename (e.g. pink.jpg, blue.png)
+      // 3. Match on image_url filename (e.g. pink.jpg, blue.png, black.webp)
       if (!colorImg && product?.images) {
         colorImg = product.images.find((img) => 
           img.image_url && img.image_url.toLowerCase().includes(cleanColor)
         )?.image_url;
       }
 
-      // 4. Positional fallback ONLY if product images have no color tags assigned
+      // 4. Positional fallback ONLY if product images have no color tags assigned at all
       if (!colorImg && !hasAnyTaggedImages && product?.images && product.images[idx]) {
         colorImg = product.images[idx].image_url;
-      }
-
-      // 5. General fallback
-      if (!colorImg) {
-        colorImg = product?.images?.[0]?.image_url || '';
       }
 
       const price = Number(matchingVariant?.price || product?.price || 2199);
@@ -168,7 +163,7 @@ export default function ProductDetailPage() {
       colorList.push({
         name: colorName,
         code: hex,
-        image: colorImg,
+        image: colorImg || '',
         price,
         mrp,
       });
