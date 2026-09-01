@@ -98,26 +98,49 @@ export default function ProductDetailPage() {
 
     product.variants.forEach((v) => {
       if (v.color && !colorMap.has(v.color)) {
+        const cleanColor = v.color.trim().toLowerCase();
+
         const hex = v.color_code || (
-          v.color.toLowerCase() === 'beige' ? '#E6D7C3' :
-          v.color.toLowerCase() === 'black' ? '#222222' :
-          v.color.toLowerCase() === 'white' ? '#FFFFFF' :
-          v.color.toLowerCase() === 'peach' ? '#FFDAB9' :
-          v.color.toLowerCase() === 'ruby red' || v.color.toLowerCase() === 'red' ? '#E0115F' :
-          v.color.toLowerCase() === 'royal blue' || v.color.toLowerCase() === 'blue' ? '#002366' :
+          cleanColor === 'beige' ? '#E6D7C3' :
+          cleanColor === 'black' ? '#222222' :
+          cleanColor === 'white' ? '#FFFFFF' :
+          cleanColor === 'peach' ? '#FFDAB9' :
+          cleanColor === 'pink' ? '#FFC0CB' :
+          cleanColor === 'ruby red' || cleanColor === 'red' ? '#E0115F' :
+          cleanColor === 'royal blue' || cleanColor === 'blue' ? '#002366' :
+          cleanColor === 'green' || cleanColor === 'emerald' ? '#50C878' :
+          cleanColor === 'yellow' || cleanColor === 'mustard' ? '#FFDB58' :
+          cleanColor === 'purple' || cleanColor === 'lavender' ? '#E6E6FA' :
           '#B38548'
         );
 
-        // Find specific image tagged with this color_name
-        const colorImgObj = product.images?.find((img) => img.color_name?.toLowerCase() === v.color.toLowerCase());
-        const colorImg = colorImgObj?.image_url 
-          || product.images?.[colorMap.size]?.image_url 
-          || product.images?.[0]?.image_url 
-          || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
+        const currentIndex = colorMap.size;
+
+        // 1. Exact match by color_name tag on ProductImage
+        let matchedImg = product.images?.find((img) => 
+          img.color_name && img.color_name.trim().toLowerCase() === cleanColor
+        )?.image_url;
+
+        // 2. Partial match on image_url path (e.g. peach.jpg, black.png)
+        if (!matchedImg && product.images) {
+          matchedImg = product.images.find((img) => 
+            img.image_url && img.image_url.toLowerCase().includes(cleanColor)
+          )?.image_url;
+        }
+
+        // 3. Index-based match if images array is ordered by color
+        if (!matchedImg && product.images && product.images[currentIndex]) {
+          matchedImg = product.images[currentIndex].image_url;
+        }
+
+        // 4. Fallback to primary product image
+        if (!matchedImg) {
+          matchedImg = product.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
+        }
 
         colorMap.set(v.color, {
           code: hex,
-          image: colorImg,
+          image: matchedImg,
           price: Number(v.price || product.price || 2199),
           mrp: Number(v.mrp || product.mrp || 2999)
         });
@@ -142,19 +165,44 @@ export default function ProductDetailPage() {
         'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1200&auto=format&fit=crop',
       ];
     }
-    const matching = product.images.filter((img) => img.color_name?.toLowerCase() === selectedColor.toLowerCase());
-    if (matching.length > 0) {
-      return matching.map((img) => img.image_url);
-    }
-    return product.images.map((img) => img.image_url);
-  }, [product?.images, selectedColor]);
+    const cleanSelected = (selectedColor || '').trim().toLowerCase();
 
-  // Sync main stage image when color changes
-  useEffect(() => {
-    if (colorSpecificImages.length > 0) {
-      setSelectedImage(colorSpecificImages[0]);
+    // 1. Filter images tagged with selected color_name
+    const exactMatches = product.images.filter((img) => 
+      img.color_name && img.color_name.trim().toLowerCase() === cleanSelected
+    );
+    if (exactMatches.length > 0) {
+      return exactMatches.map((img) => img.image_url);
     }
-  }, [colorSpecificImages]);
+
+    // 2. Filter images whose image_url contains color name
+    const urlMatches = product.images.filter((img) => 
+      img.image_url && img.image_url.toLowerCase().includes(cleanSelected)
+    );
+    if (urlMatches.length > 0) {
+      return urlMatches.map((img) => img.image_url);
+    }
+
+    // 3. Single image matched in colorOptions for selected color
+    const activeColorCard = colorOptions.find((c) => c.name.trim().toLowerCase() === cleanSelected);
+    if (activeColorCard?.image) {
+      return [activeColorCard.image];
+    }
+
+    return product.images.map((img) => img.image_url);
+  }, [product?.images, selectedColor, colorOptions]);
+
+  // Sync main stage image when selectedColor changes
+  useEffect(() => {
+    if (selectedColor && colorOptions.length > 0) {
+      const activeCard = colorOptions.find((c) => c.name.trim().toLowerCase() === selectedColor.trim().toLowerCase());
+      if (activeCard?.image) {
+        setSelectedImage(activeCard.image);
+      } else if (colorSpecificImages.length > 0) {
+        setSelectedImage(colorSpecificImages[0]);
+      }
+    }
+  }, [selectedColor, colorOptions, colorSpecificImages]);
 
   // Sizes available for the selected color
   const availableSizes = React.useMemo(() => {
