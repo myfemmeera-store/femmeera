@@ -175,37 +175,39 @@ export default function ProductDetailPage() {
     }
   }, [colorOptions]);
 
-  // Color-specific image gallery (filters to ONLY images matching selectedColor section from admin)
+  // Color-specific image gallery (prioritizes selected color images first, then appends all remaining product photos)
   const colorSpecificImages = React.useMemo(() => {
     if (!product?.images || product.images.length === 0) {
       return [];
     }
+    const allUrls = product.images.map((img) => img.image_url).filter(Boolean);
     const cleanSelected = (selectedColor || '').trim().toLowerCase();
 
-    // 1. Filter images uploaded into this specific color section in admin
-    const colorSectionMatches = product.images.filter((img) => 
-      img.color_name && img.color_name.trim().toLowerCase() === cleanSelected
-    );
-    if (colorSectionMatches.length > 0) {
-      return colorSectionMatches.map((img) => img.image_url);
-    }
+    // 1. Filter images matching selected color section by tag or URL
+    const matchingImgs = product.images
+      .filter((img) => {
+        if (!img.image_url) return false;
+        const tagMatch = img.color_name && (
+          img.color_name.trim().toLowerCase() === cleanSelected ||
+          cleanSelected.includes(img.color_name.trim().toLowerCase()) ||
+          img.color_name.trim().toLowerCase().includes(cleanSelected)
+        );
+        const urlMatch = img.image_url.toLowerCase().includes(cleanSelected);
+        return tagMatch || urlMatch;
+      })
+      .map((img) => img.image_url);
 
-    // 2. Filter images whose image_url contains color name
-    const urlMatches = product.images.filter((img) => 
-      img.image_url && img.image_url.toLowerCase().includes(cleanSelected)
-    );
-    if (urlMatches.length > 0) {
-      return urlMatches.map((img) => img.image_url);
-    }
+    // 2. Ordered list: selected color photos first, followed by all remaining product photos
+    const resultList: string[] = [];
+    matchingImgs.forEach((url) => {
+      if (!resultList.includes(url)) resultList.push(url);
+    });
+    allUrls.forEach((url) => {
+      if (!resultList.includes(url)) resultList.push(url);
+    });
 
-    // 3. Single image matched in colorOptions for selected color
-    const activeColorCard = colorOptions.find((c) => c.name.trim().toLowerCase() === cleanSelected);
-    if (activeColorCard?.image) {
-      return [activeColorCard.image];
-    }
-
-    return product.images.map((img) => img.image_url);
-  }, [product?.images, selectedColor, colorOptions]);
+    return resultList;
+  }, [product?.images, selectedColor]);
 
   // Sync main stage image when selectedColor changes
   useEffect(() => {
@@ -359,24 +361,27 @@ export default function ProductDetailPage() {
         {/* Product Viewer Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           
-          {/* Gallery Column: Main Stage Frame + Small Image Thumbnails on the Right */}
-          <div className="lg:col-span-7 flex flex-col sm:flex-row gap-4 items-start">
+          {/* Gallery Column: Vertical Thumbnails + Main Stage */}
+          <div className="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-4">
             
-            {/* Main Stage Image (Left) */}
-            <div className="relative flex-1 w-full aspect-3/4 sm:aspect-4/5 bg-white rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
-              {(hoveredColorImage || selectedImage || colorSpecificImages[0]) ? (
-                <Image
-                  src={hoveredColorImage || selectedImage || colorSpecificImages[0]}
-                  alt={product.name}
-                  fill
-                  priority
-                  className="object-cover transition-all duration-300"
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-100 text-neutral-400">
-                  <span className="text-xs font-semibold">No Image Available</span>
-                </div>
-              )}
+            {/* Vertical Thumbnails (Showing only photos for selected color) */}
+            <div className="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto shrink-0">
+              {colorSpecificImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedImage(img)}
+                  className={`relative w-16 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
+                    selectedImage === img ? 'border-[#B38548] ring-2 ring-[#B38548]/20' : 'border-[#EFE6D8] opacity-80 hover:opacity-100'
+                  }`}
+                >
+                  <Image src={img} alt={`${product.name} thumbnail`} fill className="object-cover" />
+                </button>
+              ))}
+            </div>
+
+            {/* Main Stage Image */}
+            <div className="relative flex-1 aspect-3/4 sm:aspect-4/5 bg-white rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
+              <Image src={hoveredColorImage || selectedImage || colorSpecificImages[0]} alt={product.name} fill priority className="object-cover transition-all duration-300" />
 
               <span className="absolute top-4 left-4 bg-neutral-900 text-white text-[9px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
                 NEW
@@ -392,34 +397,6 @@ export default function ProductDetailPage() {
                 <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-rose-600 text-rose-600' : ''}`} />
               </button>
             </div>
-
-            {/* Small Image Thumbnails (Right Side of Main Stage Frame) */}
-            {colorSpecificImages.length > 0 && (
-              <div className="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto shrink-0 max-h-[500px] scrollbar-none w-full sm:w-auto">
-                {colorSpecificImages.map((img, idx) => {
-                  const isActive = (selectedImage === img || (!selectedImage && idx === 0));
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setSelectedImage(img)}
-                      onMouseEnter={() => setSelectedImage(img)}
-                      className={`relative w-16 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
-                        isActive
-                          ? 'border-[#B38548] ring-2 ring-[#B38548]/30 scale-105 shadow-sm'
-                          : 'border-[#EFE6D8] opacity-75 hover:opacity-100'
-                      }`}
-                    >
-                      {img ? (
-                        <Image src={img} alt={`${product.name} thumbnail ${idx + 1}`} fill className="object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-neutral-100 flex items-center justify-center text-[9px] text-neutral-400">No Image</div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
 
           </div>
 
@@ -480,12 +457,10 @@ export default function ProductDetailPage() {
                       type="button"
                       onClick={() => {
                         setSelectedColor(c.name);
-                        if (c.image) setSelectedImage(c.image);
+                        setSelectedImage(c.image);
                         setHoveredColorImage(null);
                       }}
-                      onMouseEnter={() => {
-                        if (c.image) setHoveredColorImage(c.image);
-                      }}
+                      onMouseEnter={() => setHoveredColorImage(c.image)}
                       onMouseLeave={() => setHoveredColorImage(null)}
                       className={`relative shrink-0 w-24 sm:w-28 flex flex-col items-center bg-white rounded-2xl p-2 border-2 transition-all cursor-pointer ${
                         isSelected
@@ -494,7 +469,7 @@ export default function ProductDetailPage() {
                       }`}
                     >
                       {/* Color Preview Image Box */}
-                      <div className="relative w-full aspect-3/4 bg-neutral-100 rounded-xl overflow-hidden mb-2 border border-neutral-100">
+                      <div className="relative w-full aspect-3/4 bg-neutral-100 rounded-xl overflow-hidden mb-2 border border-neutral-100 flex items-center justify-center">
                         {c.image ? (
                           <Image
                             src={c.image}
@@ -503,16 +478,22 @@ export default function ProductDetailPage() {
                             className="object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-200 text-neutral-500 text-[10px] font-medium">
-                            No Photo
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-200/70 p-1">
+                            <span
+                              className="w-7 h-7 rounded-full border-2 border-white shadow-xs mb-1"
+                              style={{ backgroundColor: c.code }}
+                            />
+                            <span className="text-[9px] font-bold text-neutral-700 truncate max-w-full">{c.name}</span>
                           </div>
                         )}
                         {/* Color Swatch Dot Badge */}
-                        <span
-                          className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full border border-white shadow-xs"
-                          style={{ backgroundColor: c.code }}
-                          title={c.name}
-                        />
+                        {c.image && (
+                          <span
+                            className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full border border-white shadow-xs"
+                            style={{ backgroundColor: c.code }}
+                            title={c.name}
+                          />
+                        )}
                       </div>
 
                       {/* Color Name Label */}
