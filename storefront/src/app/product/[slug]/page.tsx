@@ -39,6 +39,8 @@ export default function ProductDetailPage() {
   const [addedToast, setAddedToast] = useState(false);
   const [shareToast, setShareToast] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [selectedSize, setSelectedSize] = useState<string>('');
 
   useEffect(() => {
     if (!slug) return;
@@ -60,7 +62,6 @@ export default function ProductDetailPage() {
         setSelectedImage(mainImg);
         setIsWishlisted(wishlistService.isInWishlist(res.data.id));
       } else {
-        // Search catalog to find the exact matching product by slug or name search
         const catalogRes = await productService.getProducts({ page: 1, search: slug.replace(/-/g, ' ') });
         const allProductsRes = catalogRes.data?.length ? catalogRes : await productService.getProducts({ page: 1 });
         
@@ -85,29 +86,6 @@ export default function ProductDetailPage() {
     });
   }, [slug]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-[#B38548] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-xs font-semibold text-neutral-600">Loading product details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-[#FDFBF7] py-20 px-4 text-center">
-        <h1 className="font-serif text-2xl font-bold text-neutral-900 mb-2">Product Not Found</h1>
-        <p className="text-xs text-neutral-500 mb-6">The requested product does not exist or has been moved.</p>
-        <Link href="/shop" className="px-6 py-2.5 bg-[#B38548] text-white text-xs font-bold rounded-xl">
-          Back to Shop
-        </Link>
-      </div>
-    );
-  }
-
   // Color options derived from product variants or default
   const colorOptions = React.useMemo(() => {
     if (!product?.variants || product.variants.length === 0) {
@@ -129,9 +107,6 @@ export default function ProductDetailPage() {
     });
     return Array.from(map.entries()).map(([name, code]) => ({ name, code }));
   }, [product?.variants]);
-
-  const [selectedColor, setSelectedColor] = useState<string>('');
-  const [selectedSize, setSelectedSize] = useState<string>('');
 
   // Initial color setup on product load
   useEffect(() => {
@@ -189,9 +164,32 @@ export default function ProductDetailPage() {
     );
   }, [product?.variants, selectedColor, selectedSize]);
 
-  const price = activeVariant?.price || product.variants?.[0]?.price || 2199;
-  const mrp = activeVariant?.mrp || product.variants?.[0]?.mrp || 2999;
+  const price = activeVariant?.price || product?.variants?.[0]?.price || 2199;
+  const mrp = activeVariant?.mrp || product?.variants?.[0]?.mrp || 2999;
   const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : false;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-[#B38548] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-xs font-semibold text-neutral-600">Loading product details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] py-20 px-4 text-center">
+        <h1 className="font-serif text-2xl font-bold text-neutral-900 mb-2">Product Not Found</h1>
+        <p className="text-xs text-neutral-500 mb-6">The requested product does not exist or has been moved.</p>
+        <Link href="/shop" className="px-6 py-2.5 bg-[#B38548] text-white text-xs font-bold rounded-xl">
+          Back to Shop
+        </Link>
+      </div>
+    );
+  }
 
   const handleAddToCart = async () => {
     if (!activeVariant?.id) return;
