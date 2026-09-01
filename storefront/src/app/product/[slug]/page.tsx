@@ -145,16 +145,24 @@ export default function ProductDetailPage() {
         )?.image_url;
       }
 
-      // 3. Match on image_url filename (e.g. pink.jpg, blue.png, black.webp)
+      // 4. Match on image_url filename (e.g. pink.jpg, blue.png, black.webp)
       if (!colorImg && product?.images) {
         colorImg = product.images.find((img) => 
           img.image_url && img.image_url.toLowerCase().includes(cleanColor)
         )?.image_url;
       }
 
-      // 4. Positional fallback ONLY if product images have no color tags assigned at all
-      if (!colorImg && !hasAnyTaggedImages && product?.images && product.images[idx]) {
-        colorImg = product.images[idx].image_url;
+      // 5. Smart partition fallback: divide untagged images proportionally across variant colors
+      if (!colorImg && !hasAnyTaggedImages && product?.images && product.images.length > 0) {
+        const colorArray = Array.from(allColorNames);
+        const colorIndex = colorArray.findIndex((c) => c.trim().toLowerCase() === cleanColor);
+        if (colorIndex !== -1) {
+          const totalImages = product.images.length;
+          const totalColors = colorArray.length;
+          const itemsPerColor = Math.max(1, Math.floor(totalImages / totalColors));
+          const startIndex = Math.min(colorIndex * itemsPerColor, totalImages - 1);
+          colorImg = product.images[startIndex]?.image_url;
+        }
       }
 
       const price = Number(matchingVariant?.price || product?.price || 2199);
@@ -179,7 +187,7 @@ export default function ProductDetailPage() {
     }
   }, [colorOptions]);
 
-  // Color-specific image gallery (STRICTLY displays images of selectedColor, excluding other colors)
+  // Color-specific image gallery (STRICTLY displays images of selectedColor)
   const colorSpecificImages = React.useMemo(() => {
     if (!product?.images || product.images.length === 0) {
       return [];
@@ -202,20 +210,40 @@ export default function ProductDetailPage() {
       return urlMatches.map((img) => img.image_url);
     }
 
-    // 3. Single image matched in colorOptions for selected color
+    // 3. Smart partition fallback: if untagged, assign distinct image slice to each color
+    const hasAnyTagged = product.images.some((img) => Boolean(img.color_name && img.color_name.trim()));
+    const allVariantColors = Array.from(new Set(product.variants?.map((v) => v.color?.trim()).filter(Boolean) || []));
+
+    if (!hasAnyTagged && allVariantColors.length > 0 && product.images.length > 0) {
+      const colorIndex = allVariantColors.findIndex((c) => c.toLowerCase() === cleanSelected);
+      if (colorIndex !== -1) {
+        const totalImages = product.images.length;
+        const totalColors = allVariantColors.length;
+        const itemsPerColor = Math.max(1, Math.floor(totalImages / totalColors));
+        const startIndex = Math.min(colorIndex * itemsPerColor, totalImages - 1);
+        const endIndex = colorIndex === totalColors - 1 ? totalImages : Math.min(startIndex + itemsPerColor, totalImages);
+
+        const sliced = product.images.slice(startIndex, endIndex);
+        if (sliced.length > 0) {
+          return sliced.map((img) => img.image_url);
+        }
+      }
+    }
+
+    // 4. Single image matched in colorOptions for selected color
     const activeColorCard = colorOptions.find((c) => c.name.trim().toLowerCase() === cleanSelected);
     if (activeColorCard?.image) {
       return [activeColorCard.image];
     }
 
-    // 4. Untagged images (exclude images tagged with DIFFERENT color names)
+    // 5. Untagged images
     const untaggedImages = product.images.filter((img) => !img.color_name || !img.color_name.trim());
     if (untaggedImages.length > 0) {
       return untaggedImages.map((img) => img.image_url);
     }
 
     return [product.images[0].image_url];
-  }, [product?.images, selectedColor, colorOptions]);
+  }, [product?.images, product?.variants, selectedColor, colorOptions]);
 
   // All product images list with selected color images ordered first
   const displayImages = React.useMemo(() => {
