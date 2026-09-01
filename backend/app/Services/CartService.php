@@ -256,13 +256,34 @@ class CartService
 
             $subtotal += $lineTotal;
 
-            // Resolve primary or variant image
+            // Resolve image matching variant color, variant id, or primary image
             $images = $variant->product->images;
+            $variantColorClean = trim(strtolower($variant->color ?? ''));
+
             $variantImg = $images->firstWhere('product_variant_id', $variant->id);
+            $colorMatchImg = null;
+            if (!$variantImg && !empty($variantColorClean)) {
+                $colorMatchImg = $images->first(function ($img) use ($variantColorClean) {
+                    return !empty($img->color_name) && trim(strtolower($img->color_name)) === $variantColorClean;
+                });
+            }
+            $filenameMatchImg = null;
+            if (!$variantImg && !$colorMatchImg && !empty($variantColorClean)) {
+                $filenameMatchImg = $images->first(function ($img) use ($variantColorClean) {
+                    return !empty($img->image_url) && str_contains(strtolower($img->image_url), $variantColorClean);
+                });
+            }
+
             $primaryImg = $images->firstWhere('is_primary', true);
             $firstImg = $images->first();
 
-            $imgUrl = $variantImg ? $variantImg->image_url : ($primaryImg ? $primaryImg->image_url : ($firstImg ? $firstImg->image_url : '/images/placeholder.jpg'));
+            $imgUrl = $variantImg 
+                ? $variantImg->image_url 
+                : ($colorMatchImg 
+                    ? $colorMatchImg->image_url 
+                    : ($filenameMatchImg 
+                        ? $filenameMatchImg->image_url 
+                        : ($primaryImg ? $primaryImg->image_url : ($firstImg ? $firstImg->image_url : '/images/placeholder.jpg'))));
 
             $formattedItems[] = [
                 'cart_item_id' => $item->id,
