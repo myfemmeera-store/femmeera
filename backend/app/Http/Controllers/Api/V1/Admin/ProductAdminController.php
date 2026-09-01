@@ -123,10 +123,28 @@ class ProductAdminController extends Controller
         // Attach uploaded images if provided (supports strings or objects with image_url and color_name)
         if ($request->has('images') && is_array($request->input('images'))) {
             foreach ($request->input('images') as $idx => $img) {
-                $imgUrl = is_array($img) ? ($img['image_url'] ?? null) : $img;
-                $colorName = is_array($img) ? ($img['color_name'] ?? null) : null;
+                $imgUrl = null;
+                $colorName = null;
 
-                if (!empty($imgUrl)) {
+                if (is_array($img)) {
+                    $rawUrl = $img['image_url'] ?? $img['url'] ?? $img['path'] ?? null;
+                    if (is_array($rawUrl)) {
+                        $imgUrl = (string)($rawUrl['url'] ?? $rawUrl['image_url'] ?? reset($rawUrl));
+                    } elseif (is_string($rawUrl)) {
+                        $imgUrl = $rawUrl;
+                    }
+
+                    $rawColor = $img['color_name'] ?? $img['color'] ?? null;
+                    if (is_array($rawColor)) {
+                        $colorName = (string)($rawColor['name'] ?? reset($rawColor));
+                    } elseif (is_string($rawColor)) {
+                        $colorName = $rawColor;
+                    }
+                } elseif (is_string($img)) {
+                    $imgUrl = $img;
+                }
+
+                if (!empty($imgUrl) && is_string($imgUrl)) {
                     ProductImage::create([
                         'product_id' => $product->id,
                         'color_name' => $colorName,
@@ -205,10 +223,28 @@ class ProductAdminController extends Controller
         if ($request->has('images') && is_array($request->input('images'))) {
             ProductImage::where('product_id', $product->id)->delete();
             foreach ($request->input('images') as $idx => $img) {
-                $imgUrl = is_array($img) ? ($img['image_url'] ?? null) : $img;
-                $colorName = is_array($img) ? ($img['color_name'] ?? null) : null;
+                $imgUrl = null;
+                $colorName = null;
 
-                if (!empty($imgUrl)) {
+                if (is_array($img)) {
+                    $rawUrl = $img['image_url'] ?? $img['url'] ?? $img['path'] ?? null;
+                    if (is_array($rawUrl)) {
+                        $imgUrl = (string)($rawUrl['url'] ?? $rawUrl['image_url'] ?? reset($rawUrl));
+                    } elseif (is_string($rawUrl)) {
+                        $imgUrl = $rawUrl;
+                    }
+
+                    $rawColor = $img['color_name'] ?? $img['color'] ?? null;
+                    if (is_array($rawColor)) {
+                        $colorName = (string)($rawColor['name'] ?? reset($rawColor));
+                    } elseif (is_string($rawColor)) {
+                        $colorName = $rawColor;
+                    }
+                } elseif (is_string($img)) {
+                    $imgUrl = $img;
+                }
+
+                if (!empty($imgUrl) && is_string($imgUrl)) {
                     ProductImage::create([
                         'product_id' => $product->id,
                         'color_name' => $colorName,
