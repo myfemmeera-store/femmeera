@@ -355,7 +355,7 @@ class AuthController extends Controller
             $token = $result['token'];
             $userJson = urlencode(json_encode($result['user']));
 
-            return redirect()->away("{$frontendUrl}/login/callback?token={$token}&user={$userJson}");
+            return redirect()->away("{$frontendUrl}/auth/google/callback?token={$token}&user={$userJson}");
         } catch (\Throwable $e) {
             // Fallback for code parameter exchange if direct Socialite code exchange hit state/network mismatch
             if ($request->has('code')) {
@@ -365,7 +365,7 @@ class AuthController extends Controller
                 if (!empty($data['success']) && !empty($data['data']['token'])) {
                     $token = $data['data']['token'];
                     $userJson = urlencode(json_encode($data['data']['user']));
-                    return redirect()->away("{$frontendUrl}/login/callback?token={$token}&user={$userJson}");
+                    return redirect()->away("{$frontendUrl}/auth/google/callback?token={$token}&user={$userJson}");
                 }
             }
 
