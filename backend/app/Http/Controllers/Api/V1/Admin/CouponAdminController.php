@@ -19,17 +19,35 @@ class CouponAdminController extends Controller
             ->map(function ($coupon) {
                 $couponArray = $coupon->toArray();
                 
-                // Calculate total discount given & total sales generated via usages
-                $usageStats = CouponUsage::where('coupon_id', $coupon->id)
+                // Paid / Successful Purchases (payment_status == 'PAID' or completed/processing)
+                $paidStats = CouponUsage::where('coupon_id', $coupon->id)
                     ->join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+                    ->where(function ($q) {
+                        $q->where('orders.payment_status', 'PAID')
+                          ->orWhereIn('orders.order_status', ['COMPLETED', 'PROCESSING']);
+                    })
                     ->select(
+                        DB::raw('COUNT(orders.id) as paid_count'),
                         DB::raw('COALESCE(SUM(orders.discount_amount), 0) as total_discount'),
                         DB::raw('COALESCE(SUM(orders.total_amount), 0) as total_sales')
                     )
                     ->first();
 
-                $couponArray['total_discount_given'] = (float)($usageStats->total_discount ?? 0);
-                $couponArray['total_sales_generated'] = (float)($usageStats->total_sales ?? 0);
+                // Unpaid / Unsuccessful Attempts (used in checkout but payment incomplete)
+                $unpaidCount = CouponUsage::where('coupon_id', $coupon->id)
+                    ->join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+                    ->where('orders.payment_status', '!=', 'PAID')
+                    ->whereNotIn('orders.order_status', ['COMPLETED', 'PROCESSING'])
+                    ->count();
+
+                $totalSales = (float)($paidStats->total_sales ?? 0);
+                $commissionPercent = (float)($coupon->influencer_commission_percent ?? 0);
+
+                $couponArray['successful_purchases_count'] = (int)($paidStats->paid_count ?? 0);
+                $couponArray['unpaid_attempts_count'] = (int)$unpaidCount;
+                $couponArray['total_discount_given'] = (float)($paidStats->total_discount ?? 0);
+                $couponArray['total_sales_generated'] = $totalSales;
+                $couponArray['influencer_commission_earned'] = round(($totalSales * ($commissionPercent / 100)), 2);
                 
                 return $couponArray;
             });
@@ -55,12 +73,22 @@ class CouponAdminController extends Controller
         
         $totalRedemptions = CouponUsage::count();
         
-        $stats = CouponUsage::join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+        $paidStats = CouponUsage::join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+            ->where(function ($q) {
+                $q->where('orders.payment_status', 'PAID')
+                  ->orWhereIn('orders.order_status', ['COMPLETED', 'PROCESSING']);
+            })
             ->select(
+                DB::raw('COUNT(orders.id) as successful_paid_count'),
                 DB::raw('COALESCE(SUM(orders.discount_amount), 0) as total_discount'),
                 DB::raw('COALESCE(SUM(orders.total_amount), 0) as total_sales')
             )
             ->first();
+
+        $unpaidCount = CouponUsage::join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+            ->where('orders.payment_status', '!=', 'PAID')
+            ->whereNotIn('orders.order_status', ['COMPLETED', 'PROCESSING'])
+            ->count();
 
         return response()->json([
             'success' => true,
@@ -68,8 +96,116 @@ class CouponAdminController extends Controller
                 'total_coupons' => $totalCoupons,
                 'active_coupons' => $activeCoupons,
                 'total_redemptions' => $totalRedemptions,
-                'total_discount_issued' => (float)($stats->total_discount ?? 0),
-                'total_sales_generated' => (float)($stats->total_sales ?? 0),
+                'successful_paid_purchases' => (int)($paidStats->successful_paid_count ?? 0),
+                'unpaid_attempts' => (int)$unpaidCount,
+                'total_discount_issued' => (float)($paidStats->total_discount ?? 0),
+                'total_sales_generated' => (float)($paidStats->total_sales ?? 0),
+            ]
+        ], 200);
+    }
+
+    public function show(int $id): JsonResponse
+    {
+        $coupon = Coupon::findOrFail($id);
+
+        // Usage Orders with user details
+        $usageOrders = DB::table('coupon_usages')
+            ->join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+            ->leftJoin('users', 'orders.user_id', '=', 'users.id')
+            ->where('coupon_usages.coupon_id', $coupon->id)
+            ->orderBy('orders.id', 'desc')
+            ->select([
+                'orders.id as order_id',
+                'orders.order_number',
+                'orders.total_amount',
+                'orders.discount_amount',
+                'orders.order_status',
+                'orders.payment_status',
+                'orders.created_at as order_date',
+                'users.name as customer_name',
+                'users.email as customer_email',
+            ])
+            ->get();
+
+        $paidOrdersCount = 0;
+        $unpaidAttemptsCount = 0;
+        $totalPaidSales = 0.00;
+        $totalPaidDiscount = 0.00;
+
+        $orderIds = [];
+        foreach ($usageOrders as $ord) {
+            $orderIds[] = $ord->order_id;
+            $isPaid = ($ord->payment_status === 'PAID') || in_array($ord->order_status, ['COMPLETED', 'PROCESSING']);
+            if ($isPaid) {
+                $paidOrdersCount++;
+                $totalPaidSales += (float)$ord->total_amount;
+                $totalPaidDiscount += (float)$ord->discount_amount;
+            } else {
+                $unpaidAttemptsCount++;
+            }
+        }
+
+        // Attach items purchased for each order & aggregate products summary
+        $orderItemsGrouped = [];
+        $productSummaryMap = [];
+
+        if (!empty($orderIds)) {
+            $items = DB::table('order_items')
+                ->whereIn('order_id', $orderIds)
+                ->get();
+
+            foreach ($items as $item) {
+                $orderItemsGrouped[$item->order_id][] = [
+                    'id' => $item->id,
+                    'product_name' => $item->product_name_snapshot,
+                    'sku' => $item->sku_snapshot,
+                    'color' => $item->color_snapshot,
+                    'size' => $item->size_snapshot,
+                    'quantity' => (int)$item->quantity,
+                    'unit_price' => (float)$item->unit_price,
+                    'total_amount' => (float)$item->total_amount,
+                ];
+
+                // Aggregate into product summary map for paid orders
+                $prodKey = $item->product_name_snapshot . '|' . ($item->color_snapshot ?: 'Default') . '|' . ($item->size_snapshot ?: 'Free');
+                if (!isset($productSummaryMap[$prodKey])) {
+                    $productSummaryMap[$prodKey] = [
+                        'product_name' => $item->product_name_snapshot,
+                        'sku' => $item->sku_snapshot,
+                        'color' => $item->color_snapshot ?: 'N/A',
+                        'size' => $item->size_snapshot ?: 'N/A',
+                        'total_quantity_sold' => 0,
+                        'total_revenue' => 0.00,
+                    ];
+                }
+                $productSummaryMap[$prodKey]['total_quantity_sold'] += (int)$item->quantity;
+                $productSummaryMap[$prodKey]['total_revenue'] += (float)$item->total_amount;
+            }
+        }
+
+        $formattedOrders = $usageOrders->map(function ($ord) use ($orderItemsGrouped) {
+            $ord->items = $orderItemsGrouped[$ord->order_id] ?? [];
+            return $ord;
+        });
+
+        $commissionPercent = (float)($coupon->influencer_commission_percent ?? 0);
+        $commissionEarned = round(($totalPaidSales * ($commissionPercent / 100)), 2);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'coupon' => $coupon,
+                'metrics' => [
+                    'total_applications' => count($usageOrders),
+                    'successful_paid_purchases' => $paidOrdersCount,
+                    'unpaid_attempts' => $unpaidAttemptsCount,
+                    'total_sales_generated' => (float)$totalPaidSales,
+                    'total_discount_given' => (float)$totalPaidDiscount,
+                    'commission_percent' => $commissionPercent,
+                    'commission_earned' => $commissionEarned,
+                ],
+                'purchased_products' => array_values($productSummaryMap),
+                'orders' => $formattedOrders,
             ]
         ], 200);
     }

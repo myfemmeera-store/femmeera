@@ -193,6 +193,7 @@ Route::middleware(['auth:sanctum', 'admin.access'])->prefix('admin')->group(func
     // Admin Coupons APIs (coupons.* permissions)
     Route::get('/coupons', [CouponAdminController::class, 'index'])->middleware('permission:coupons.view');
     Route::get('/coupons/analytics', [CouponAdminController::class, 'analytics'])->middleware('permission:coupons.view');
+    Route::get('/coupons/{id}', [CouponAdminController::class, 'show'])->middleware('permission:coupons.view');
     Route::post('/coupons', [CouponAdminController::class, 'store'])->middleware('permission:coupons.create');
     Route::put('/coupons/{id}', [CouponAdminController::class, 'update'])->middleware('permission:coupons.update');
     Route::post('/coupons/{id}/toggle-status', [CouponAdminController::class, 'toggleStatus'])->middleware('permission:coupons.update');
