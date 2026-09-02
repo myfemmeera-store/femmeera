@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Femmeera Admin Panel",
@@ -16,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.className} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-neutral-50">
+    <html lang="en" className="h-full antialiased font-sans">
+      <body className="min-h-full flex flex-col bg-neutral-50 font-sans text-neutral-900">
         <AdminLayout>{children}</AdminLayout>
       </body>
     </html>
