@@ -392,11 +392,11 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] py-6 px-4 sm:px-6 lg:px-8 space-y-12">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#FDFBF7] py-4 px-3 sm:px-6 lg:px-8 space-y-8 pb-24 sm:pb-12">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         
         {/* Breadcrumb Navigation */}
-        <nav className="text-[11px] text-neutral-500 flex items-center space-x-2">
+        <nav className="text-[11px] text-neutral-500 flex items-center space-x-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1">
           <Link href="/" className="hover:text-[#B38548]">Home</Link>
           <span>/</span>
           <Link href="/women" className="hover:text-[#B38548]">Western Wear</Link>
@@ -407,13 +407,13 @@ export default function ProductDetailPage() {
         </nav>
 
         {/* Product Viewer Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-start">
           
-          {/* Gallery Column: Vertical Left Thumbnails + Main Stage Photo */}
-          <div className="lg:col-span-7 flex flex-col sm:flex-row gap-4 items-start">
+          {/* Gallery Column: Horizontal Mobile / Vertical Desktop Left Thumbnails + Main Stage Photo */}
+          <div className="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 items-start">
             
-            {/* Left Vertical Thumbnails List (Stacked one below the other) */}
-            <div className="flex flex-row sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto shrink-0 max-h-[580px] pr-1 py-1 scrollbar-thin">
+            {/* Thumbnails List (Horizontal on mobile, vertical stacked on desktop) */}
+            <div className="flex flex-row sm:flex-col gap-2.5 sm:gap-3 overflow-x-auto sm:overflow-y-auto shrink-0 w-full sm:w-auto max-h-none sm:max-h-[580px] py-1 px-0.5 scrollbar-thin">
               {displayImages.map((img, idx) => {
                 const isSelected = (selectedImage || displayImages[0]) === img;
                 const isColorMatched = colorSpecificImages.includes(img);
@@ -423,7 +423,7 @@ export default function ProductDetailPage() {
                     type="button"
                     onClick={() => setSelectedImage(img)}
                     onMouseEnter={() => setSelectedImage(img)}
-                    className={`relative w-16 h-20 sm:w-20 sm:h-26 rounded-2xl overflow-hidden border-2 transition-all shrink-0 bg-neutral-100 shadow-2xs ${
+                    className={`relative w-16 h-20 sm:w-20 sm:h-26 rounded-xl sm:rounded-2xl overflow-hidden border-2 transition-all shrink-0 bg-neutral-100 shadow-2xs ${
                       isSelected
                         ? 'border-[#B38548] ring-2 ring-[#B38548]/30 scale-102 shadow-sm'
                         : isColorMatched
@@ -438,10 +438,10 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Main Stage Image */}
-            <div className="relative flex-1 aspect-3/4 sm:aspect-4/5 bg-white rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
+            <div className="relative w-full flex-1 aspect-3/4 sm:aspect-4/5 bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
               <Image src={hoveredColorImage || selectedImage || displayImages[0]} alt={product.name} fill priority className="object-cover transition-all duration-300" />
 
-              <span className="absolute top-4 left-4 bg-neutral-900 text-white text-[9px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
+              <span className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-neutral-900 text-white text-[9px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
                 NEW
               </span>
 
@@ -450,7 +450,7 @@ export default function ProductDetailPage() {
                   const res = wishlistService.toggleWishlist(product);
                   setIsWishlisted(res.isWishlisted);
                 }}
-                className="absolute top-4 right-4 p-2.5 bg-white/90 hover:bg-white text-neutral-700 hover:text-rose-600 rounded-full shadow-sm transition-all"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2.5 bg-white/90 hover:bg-white text-neutral-700 hover:text-rose-600 rounded-full shadow-sm transition-all"
               >
                 <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-rose-600 text-rose-600' : ''}`} />
               </button>
@@ -459,7 +459,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Right Options Column */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-5 space-y-5 sm:space-y-6">
             
             <div>
               <h1 className="font-serif text-2xl sm:text-3xl text-neutral-900 font-medium tracking-tight">
@@ -477,7 +477,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Price & Discount Section matching reference screenshot */}
+            {/* Price & Discount Section */}
             <div className="space-y-2 border-b border-neutral-200 pb-4">
               <div className="flex items-baseline space-x-2">
                 {mrp > price && (
@@ -505,7 +505,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Color Selection Cards (Amazon Style layout matching reference image) */}
+            {/* Color Selection Cards */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-neutral-900 block uppercase tracking-wider">
@@ -586,7 +586,7 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-6 gap-2">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {availableSizes.map((s) => {
                   const matchingVar = product.variants?.find((v) => v.color === selectedColor && v.size === s);
                   const isSelected = selectedSize === s;
@@ -633,7 +633,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Dual CTAs */}
+            {/* Dual Desktop CTAs */}
             <div className="space-y-3 pt-2">
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -859,6 +859,40 @@ export default function ProductDetailPage() {
           </div>
         )}
 
+      </div>
+
+      {/* Mobile Sticky Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md px-4 py-3 border-t border-neutral-200/80 shadow-2xl flex items-center gap-2.5 sm:hidden">
+        <div className="flex flex-col leading-tight mr-auto">
+          <span className="text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider">Total</span>
+          <span className="font-sans font-black text-lg text-neutral-900">
+            ₹{price.toLocaleString('en-IN')}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={isOutOfStock}
+          className={`py-2.5 px-3.5 font-sans font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center space-x-1.5 shrink-0 ${
+            isOutOfStock
+              ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
+              : 'bg-[#B38548] text-white active:scale-95'
+          }`}
+        >
+          <ShoppingBag className="w-3.5 h-3.5" />
+          <span>{isOutOfStock ? 'OUT OF STOCK' : 'ADD TO BAG'}</span>
+        </button>
+
+        {!isOutOfStock && (
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            className="py-2.5 px-3.5 font-sans font-bold text-xs uppercase tracking-wider rounded-xl bg-neutral-900 text-white shadow-md shrink-0 active:scale-95"
+          >
+            BUY NOW
+          </button>
+        )}
       </div>
     </div>
   );
