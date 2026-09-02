@@ -128,38 +128,56 @@ class AuthService
         }
 
         // Find user by google_id or email
-        $user = User::where('google_id', $googleId)
-            ->orWhere('email', $email)
-            ->first();
+        $user = User::where(function ($q) use ($googleId, $email) {
+            if ($googleId && \Illuminate\Support\Facades\Schema::hasColumn('users', 'google_id')) {
+                $q->where('google_id', $googleId);
+            }
+            if ($email) {
+                $q->orWhere('email', $email);
+            }
+        })->first();
 
         if ($user) {
             // Link Google account if not linked
-            if (empty($user->google_id)) {
-                $user->google_id = $googleId;
+            try {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'google_id') && empty($user->google_id)) {
+                    $user->google_id = $googleId;
+                }
+                if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'provider') && empty($user->provider)) {
+                    $user->provider = 'google';
+                }
+                if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'avatar') && $avatar) {
+                    $user->avatar = $avatar;
+                }
+                if (empty($user->email_verified_at)) {
+                    $user->email_verified_at = now();
+                }
+                $user->save();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("AuthService googleLogin: Failed to update user details: " . $e->getMessage());
             }
-            if (empty($user->provider)) {
-                $user->provider = 'google';
-            }
-            if (empty($user->avatar) && $avatar) {
-                $user->avatar = $avatar;
-            }
-            if (empty($user->email_verified_at)) {
-                $user->email_verified_at = now();
-            }
-            $user->save();
         } else {
             // Create new customer user
-            $user = User::create([
+            $userData = [
                 'name' => $name,
                 'email' => $email,
                 'password' => Hash::make(\Illuminate\Support\Str::random(32)),
                 'user_type' => 'CUSTOMER', // STRICTLY CUSTOMER
                 'status' => 'ACTIVE',
-                'google_id' => $googleId,
-                'provider' => 'google',
-                'avatar' => $avatar,
                 'email_verified_at' => now(),
-            ]);
+            ];
+
+            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'google_id')) {
+                $userData['google_id'] = $googleId;
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'provider')) {
+                $userData['provider'] = 'google';
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'avatar')) {
+                $userData['avatar'] = $avatar;
+            }
+
+            $user = User::create($userData);
         }
 
         if ($user->status !== 'ACTIVE') {
