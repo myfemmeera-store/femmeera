@@ -296,7 +296,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Redirect to Google OAuth Consent Page via Laravel Socialite
+     * Redirect to Google OAuth Consent Page via Laravel Socialite with direct fallback
      */
     public function googleRedirect(): JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
     {
@@ -305,11 +305,23 @@ class AuthController extends Controller
                 ->stateless()
                 ->redirect();
         } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Google Redirect Error: ' . $e->getMessage(),
-            ], 500);
+            \Illuminate\Support\Facades\Log::warning("AuthController googleRedirect: Socialite failed ({$e->getMessage()}), using direct OAuth redirect.");
         }
+
+        // Direct Google OAuth URL fallback
+        $clientId = config('services.google.client_id') ?: env('GOOGLE_CLIENT_ID', '1042125952884-m68nnefo4hc8nqknodjppd4d609flabb.apps.googleusercontent.com');
+        $redirectUri = config('services.google.redirect') ?: env('GOOGLE_REDIRECT_URI', 'https://femmeera.com/auth/google/callback');
+
+        $url = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+            'response_type' => 'code',
+            'scope' => 'openid email profile',
+            'access_type' => 'online',
+            'prompt' => 'select_account',
+        ]);
+
+        return redirect()->away($url);
     }
 
     /**
