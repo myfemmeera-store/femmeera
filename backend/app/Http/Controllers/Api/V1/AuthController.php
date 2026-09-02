@@ -296,61 +296,68 @@ class AuthController extends Controller
     }
 
     /**
-     * Redirect to Google OAuth Consent Page
+     * Redirect to Google OAuth Consent Page via Laravel Socialite
      */
-    public function googleRedirect(): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function googleRedirect(): JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
     {
-        $clientId = config('services.google.client_id', env('GOOGLE_CLIENT_ID'));
-        $redirectUri = config('services.google.redirect_uri', env('GOOGLE_REDIRECT_URI', 'http://localhost:8000/api/v1/auth/google/callback'));
-
-        if (!$clientId) {
+        try {
+            return \Laravel\Socialite\Facades\Socialite::driver('google')
+                ->stateless()
+                ->redirect();
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Google Client ID is not configured on server.',
+                'message' => 'Google Redirect Error: ' . $e->getMessage(),
             ], 500);
         }
-
-        $url = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
-            'client_id' => $clientId,
-            'redirect_uri' => $redirectUri,
-            'response_type' => 'code',
-            'scope' => 'openid email profile',
-            'access_type' => 'online',
-            'prompt' => 'select_account',
-        ]);
-
-        return redirect()->away($url);
     }
 
     /**
-     * Google OAuth Callback Endpoint
+     * Google OAuth Callback Endpoint via Laravel Socialite
      */
     public function googleCallback(Request $request)
     {
+        $frontendUrl = rtrim(env('FRONTEND_URL', 'https://femmeera.com'), '/');
+
         if ($request->has('error')) {
-            $frontendUrl = env('FRONTEND_URL', 'https://femmeera.com') . '/login?error=' . urlencode($request->input('error'));
-            return redirect()->away($frontendUrl);
+            $errorReason = $request->input('error_description') ?: $request->input('error');
+            return redirect()->away("{$frontendUrl}/login?error=" . urlencode($errorReason));
         }
 
-        $code = $request->input('code');
-        if (!$code) {
-            $frontendUrl = env('FRONTEND_URL', 'https://femmeera.com') . '/login?error=missing_code';
-            return redirect()->away($frontendUrl);
-        }
+        try {
+            $googleUser = \Laravel\Socialite\Facades\Socialite::driver('google')->stateless()->user();
 
-        $request->merge(['code' => $code]);
-        $response = $this->googleLogin($request);
+            $googlePayload = [
+                'id' => $googleUser->getId(),
+                'sub' => $googleUser->getId(),
+                'email' => $googleUser->getEmail(),
+                'name' => $googleUser->getName() ?: 'Google Customer',
+                'picture' => $googleUser->getAvatar(),
+                'avatar' => $googleUser->getAvatar(),
+                'email_verified' => true,
+            ];
 
-        $data = $response->getData(true);
-        if (isset($data['success']) && $data['success'] && isset($data['data']['token'])) {
-            $token = $data['data']['token'];
-            $userJson = urlencode(json_encode($data['data']['user']));
-            $frontendUrl = env('FRONTEND_URL', 'https://femmeera.com') . '/login/callback?token=' . $token . '&user=' . $userJson;
-            return redirect()->away($frontendUrl);
-        } else {
-            $errMsg = $data['message'] ?? 'Google login failed';
-            $frontendUrl = env('FRONTEND_URL', 'https://femmeera.com') . '/login?error=' . urlencode($errMsg);
-            return redirect()->away($frontendUrl);
+            $guestSessionId = $request->header('X-Guest-Session-ID') ?: $request->input('guest_session_id');
+            $result = $this->authService->googleLogin($googlePayload, $guestSessionId);
+
+            $token = $result['token'];
+            $userJson = urlencode(json_encode($result['user']));
+
+            return redirect()->away("{$frontendUrl}/login/callback?token={$token}&user={$userJson}");
+        } catch (\Throwable $e) {
+            // Fallback for code parameter exchange if direct Socialite code exchange hit state/network mismatch
+            if ($request->has('code')) {
+                $response = $this->googleLogin($request);
+                $data = $response->getData(true);
+
+                if (!empty($data['success']) && !empty($data['data']['token'])) {
+                    $token = $data['data']['token'];
+                    $userJson = urlencode(json_encode($data['data']['user']));
+                    return redirect()->away("{$frontendUrl}/login/callback?token={$token}&user={$userJson}");
+                }
+            }
+
+            return redirect()->away("{$frontendUrl}/login?error=" . urlencode('Google authentication failed: ' . $e->getMessage()));
         }
     }
 }

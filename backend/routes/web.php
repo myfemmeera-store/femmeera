@@ -9,6 +9,9 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('/auth/google/redirect', [\App\Http\Controllers\Api\V1\AuthController::class, 'googleRedirect']);
+Route::get('/auth/google/callback', [\App\Http\Controllers\Api\V1\AuthController::class, 'googleCallback']);
+
 // Dynamic Storage Media File Server (Multi-location search for Hostinger compatibility)
 Route::get('/storage/{path}', function ($path) {
     try {
