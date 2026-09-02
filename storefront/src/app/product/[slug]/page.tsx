@@ -409,11 +409,30 @@ export default function ProductDetailPage() {
         {/* Product Viewer Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-start">
           
-          {/* Gallery Column: Horizontal Mobile / Vertical Desktop Left Thumbnails + Main Stage Photo */}
-          <div className="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 items-start">
+          {/* Gallery Column: Main Stage Photo on Top (Mobile) / Left Thumbnails + Main Stage (Desktop) */}
+          <div className="lg:col-span-7 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start">
             
-            {/* Thumbnails List (Horizontal on mobile, vertical stacked on desktop) */}
-            <div className="flex flex-row sm:flex-col gap-2.5 sm:gap-3 overflow-x-auto sm:overflow-y-auto shrink-0 w-full sm:w-auto max-h-none sm:max-h-[580px] py-1 px-0.5 scrollbar-thin">
+            {/* Main Stage Image (First on Mobile, Right on Desktop) */}
+            <div className="relative w-full order-1 sm:order-2 flex-1 aspect-3/4 sm:aspect-4/5 bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
+              <Image src={hoveredColorImage || selectedImage || displayImages[0]} alt={product.name} fill priority className="object-cover transition-all duration-300" />
+
+              <span className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-neutral-900 text-white text-[9px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
+                NEW
+              </span>
+
+              <button
+                onClick={() => {
+                  const res = wishlistService.toggleWishlist(product);
+                  setIsWishlisted(res.isWishlisted);
+                }}
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2.5 bg-white/90 hover:bg-white text-neutral-700 hover:text-rose-600 rounded-full shadow-sm transition-all"
+              >
+                <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-rose-600 text-rose-600' : ''}`} />
+              </button>
+            </div>
+
+            {/* Thumbnails List (Second on Mobile as horizontal row, Left on Desktop as vertical column) */}
+            <div className="order-2 sm:order-1 flex flex-row sm:flex-col gap-2.5 sm:gap-3 overflow-x-auto sm:overflow-y-auto shrink-0 w-full sm:w-auto max-h-none sm:max-h-[580px] py-1 px-0.5 scrollbar-thin">
               {displayImages.map((img, idx) => {
                 const isSelected = (selectedImage || displayImages[0]) === img;
                 const isColorMatched = colorSpecificImages.includes(img);
@@ -435,25 +454,6 @@ export default function ProductDetailPage() {
                   </button>
                 );
               })}
-            </div>
-
-            {/* Main Stage Image */}
-            <div className="relative w-full flex-1 aspect-3/4 sm:aspect-4/5 bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-[#EFE6D8] shadow-xs group">
-              <Image src={hoveredColorImage || selectedImage || displayImages[0]} alt={product.name} fill priority className="object-cover transition-all duration-300" />
-
-              <span className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-neutral-900 text-white text-[9px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
-                NEW
-              </span>
-
-              <button
-                onClick={() => {
-                  const res = wishlistService.toggleWishlist(product);
-                  setIsWishlisted(res.isWishlisted);
-                }}
-                className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2.5 bg-white/90 hover:bg-white text-neutral-700 hover:text-rose-600 rounded-full shadow-sm transition-all"
-              >
-                <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-rose-600 text-rose-600' : ''}`} />
-              </button>
             </div>
 
           </div>
