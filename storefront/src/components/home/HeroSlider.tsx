@@ -40,6 +40,8 @@ export const HeroSlider: React.FC = () => {
   const [slides, setSlides] = useState<Slide[]>(fallbackSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   useEffect(() => {
     cmsService.getHeroBanners().then((res) => {
@@ -75,6 +77,28 @@ export const HeroSlider: React.FC = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
+  // Touch Swipe Gestures for Mobile & Touch Devices
+  const minSwipeDistance = 40;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    if (distance > minSwipeDistance) {
+      handleNext();
+    } else if (distance < -minSwipeDistance) {
+      handlePrev();
+    }
+  };
+
   const slide = slides[currentSlide] || slides[0];
 
   return (
@@ -82,6 +106,9 @@ export const HeroSlider: React.FC = () => {
       className="relative w-full overflow-hidden bg-[#FAF6F0]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* 100% Full Width Hero Slider Stage */}
       <div className="relative w-full h-[520px] sm:h-[650px] lg:h-[720px] cursor-pointer" onClick={() => router.push(slide.link)}>
@@ -154,6 +181,34 @@ export const HeroSlider: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Left/Right Navigation Arrows */}
+      {slides.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrev();
+            }}
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 bg-black/30 hover:bg-black/60 text-white rounded-full backdrop-blur-sm transition-all hover:scale-110 shadow-lg cursor-pointer"
+            aria-label="Previous Slide"
+          >
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleNext();
+            }}
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 bg-black/30 hover:bg-black/60 text-white rounded-full backdrop-blur-sm transition-all hover:scale-110 shadow-lg cursor-pointer"
+            aria-label="Next Slide"
+          >
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+        </>
+      )}
 
       {/* Bottom Indicator Dots */}
       {slides.length > 1 && (
