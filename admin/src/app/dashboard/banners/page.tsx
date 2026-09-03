@@ -782,8 +782,7 @@ export default function HeroBannersAdminPage() {
                 label="Slide Title"
                 value={formData.title || ''}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g. Timeless Tradition"
-                required
+                placeholder="e.g. Timeless Tradition (Optional)"
               />
 
               <Input

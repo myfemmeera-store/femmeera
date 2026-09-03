@@ -94,7 +94,7 @@ class CMSAdminController extends Controller
     public function storeBanner(Request $request): JsonResponse
     {
         $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255',
             'subtitle' => 'nullable|string|max:255',
             'image_url' => 'required|string',
             'mobile_image_url' => 'nullable|string',
