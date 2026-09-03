@@ -182,33 +182,7 @@ export const HeroSlider: React.FC = () => {
         })}
       </div>
 
-      {/* Left/Right Navigation Arrows */}
-      {slides.length > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePrev();
-            }}
-            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 bg-black/30 hover:bg-black/60 text-white rounded-full backdrop-blur-sm transition-all hover:scale-110 shadow-lg cursor-pointer"
-            aria-label="Previous Slide"
-          >
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleNext();
-            }}
-            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 bg-black/30 hover:bg-black/60 text-white rounded-full backdrop-blur-sm transition-all hover:scale-110 shadow-lg cursor-pointer"
-            aria-label="Next Slide"
-          >
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-        </>
-      )}
+
 
       {/* Bottom Indicator Dots */}
       {slides.length > 1 && (
