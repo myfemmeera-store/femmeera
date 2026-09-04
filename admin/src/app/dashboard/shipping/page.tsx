@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Truck, Plus, Trash2, Edit2, Save, CheckCircle2 } from 'lucide-react';
+import { Truck, Plus, Trash2, Edit2, Save, CheckCircle2, Calculator } from 'lucide-react';
+import Link from 'next/link';
 import { getAdminToken } from '@/services/api';
 
 interface ShippingRule {
@@ -147,7 +148,7 @@ export default function ShippingManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight flex items-center gap-2">
             <Truck className="w-6 h-6 text-black" />
@@ -155,6 +156,13 @@ export default function ShippingManagementPage() {
           </h1>
           <p className="text-xs text-neutral-500">Configure subtotal shipping charge rules and shipping policy</p>
         </div>
+
+        <Link href="/dashboard/shipping/rate-calculator">
+          <button className="px-4 py-2 bg-black text-white font-bold rounded-xl text-xs flex items-center space-x-2 hover:bg-neutral-800 transition-colors shadow-xs">
+            <Calculator className="w-4 h-4 text-amber-400" />
+            <span>Shipping Rate Calculator ↗</span>
+          </button>
+        </Link>
       </div>
 
       {toast && (

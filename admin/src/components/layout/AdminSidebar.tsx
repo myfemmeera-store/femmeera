@@ -20,7 +20,8 @@ import {
   Sparkles,
   Truck,
   RotateCcw,
-  Mail
+  Mail,
+  Calculator
 } from 'lucide-react';
 import { User } from '@/types';
 
@@ -75,10 +76,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, onNavigate }) 
       permission: 'orders.view',
     },
     {
-      title: 'Shipping',
+      title: 'Shipping & Rules',
       href: '/dashboard/shipping',
       icon: <Truck className="w-4 h-4 text-amber-600" />,
       permission: 'settings.view',
+    },
+    {
+      title: 'Rate Calculator',
+      href: '/dashboard/shipping/rate-calculator',
+      icon: <Calculator className="w-4 h-4 text-blue-600" />,
+      badge: 'Shiprocket',
     },
     {
       title: 'Returns',

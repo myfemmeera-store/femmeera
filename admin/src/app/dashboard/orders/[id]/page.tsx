@@ -12,7 +12,7 @@ import { Modal } from '@/components/ui/Modal';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
-import { ArrowLeft, Truck, Ban, CheckCircle2, MapPin, User as UserIcon, Clock, PackageCheck, CreditCard, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Truck, Ban, CheckCircle2, MapPin, User as UserIcon, Clock, PackageCheck, CreditCard, ShieldCheck, Calculator } from 'lucide-react';
 import Link from 'next/link';
 
 export default function OrderDetailsPage() {
@@ -199,6 +199,18 @@ export default function OrderDetailsPage() {
             </Button>
           ))}
 
+          <Link
+            href={`/dashboard/shipping/rate-calculator?order_id=${order.id}&order_number=${order.order_number}&delivery_pincode=${order.shipping_address_snapshot?.pincode || '560041'}&value=${order.total_amount}&cod=${order.payment_status === 'PAID' ? '0' : '1'}`}
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Calculator className="w-4 h-4 text-blue-600" />}
+            >
+              Calculate Shipping Rates
+            </Button>
+          </Link>
+
           <Button
             variant="outline"
             size="sm"
@@ -320,26 +332,44 @@ export default function OrderDetailsPage() {
           </Card>
 
           {/* Tracking Info Card (if present) */}
-          {order.carrier && (
-            <Card title="Shipping & Logistics Information" subtitle="Dispatch courier tracking">
-              <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs space-y-1">
-                <p>
-                  Courier Partner: <span className="font-bold text-neutral-900">{order.carrier}</span>
-                </p>
-                <p>
-                  Tracking AWB #: <span className="font-mono font-bold text-neutral-900">{order.tracking_number}</span>
-                </p>
-                {order.tracking_url && (
-                  <p className="pt-1">
+          {(order.carrier || (order as any).shiprocket_shipment_id || (order as any).awb_code) && (
+            <Card title="Shiprocket & Logistics Information" subtitle="Dispatch courier tracking & shipment IDs">
+              <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs space-y-2">
+                <div className="grid grid-cols-2 gap-2 pb-2 border-b border-neutral-200">
+                  <div>
+                    <span className="text-[10px] text-neutral-400 uppercase font-bold block">Courier Partner</span>
+                    <span className="font-bold text-neutral-900">{(order as any).courier_name || order.carrier || 'Shiprocket Partner'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-neutral-400 uppercase font-bold block">Shipment Status</span>
+                    <span className="font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded text-[10px]">
+                      {(order as any).shipment_status || order.order_status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-neutral-700">
+                  {(order as any).shiprocket_order_id && (
+                    <p>Shiprocket Order ID: <span className="font-mono font-bold text-neutral-900">{(order as any).shiprocket_order_id}</span></p>
+                  )}
+                  {(order as any).shiprocket_shipment_id && (
+                    <p>Shiprocket Shipment ID: <span className="font-mono font-bold text-neutral-900">{(order as any).shiprocket_shipment_id}</span></p>
+                  )}
+                  <p>Tracking AWB #: <span className="font-mono font-bold text-neutral-900">{(order as any).awb_code || order.tracking_number || 'Pending'}</span></p>
+                </div>
+
+                {(order.tracking_url || (order as any).awb_code) && (
+                  <div className="pt-2 border-t border-neutral-200">
                     <a
-                      href={order.tracking_url}
+                      href={order.tracking_url || `https://shiprocket.co/tracking/${(order as any).awb_code}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-black font-bold underline hover:text-neutral-700"
+                      className="inline-flex items-center space-x-1 text-black font-bold underline hover:text-neutral-700"
                     >
-                      Track Shipment Online ↗
+                      <span>Track Shipment on Shiprocket</span>
+                      <Truck className="w-3.5 h-3.5" />
                     </a>
-                  </p>
+                  </div>
                 )}
               </div>
             </Card>

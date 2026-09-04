@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductAdminController;
 use App\Http\Controllers\Api\V1\Admin\ReviewAdminController;
 use App\Http\Controllers\Api\V1\Admin\ReturnAdminController;
 use App\Http\Controllers\Api\V1\Admin\ShippingAdminController;
+use App\Http\Controllers\Api\V1\Admin\ShiprocketAdminController;
 use App\Http\Controllers\Api\V1\Admin\TaxAdminController;
 use App\Http\Controllers\Api\V1\Customer\CustomerOrderController;
 use App\Http\Controllers\Api\V1\Customer\CustomerReturnController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Api\V1\CustomerAddressController;
 use App\Http\Controllers\Api\V1\MediaController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PaymentWebhookController;
+use App\Http\Controllers\Api\V1\ShiprocketWebhookController;
 use App\Http\Controllers\Api\V1\PublicCatalogController;
 use App\Http\Controllers\Api\V1\PublicPolicyController;
 use App\Http\Controllers\Api\V1\ShippingController;
@@ -64,6 +66,8 @@ Route::prefix('auth')->group(function () {
 // Public Webhook Callbacks (Exempt from auth)
 Route::post('/payments/webhook/razorpay', [PaymentWebhookController::class, 'handleRazorpay']);
 Route::post('/webhooks/razorpay', [PaymentWebhookController::class, 'handleRazorpay']);
+Route::post('/shipment-updates', [ShiprocketWebhookController::class, 'handleWebhook']);
+Route::post('/shiprocket/webhook', [ShiprocketWebhookController::class, 'handleWebhook']);
 
 // Public Cart & Shipping APIs (Supports both guest & logged in users)
 Route::prefix('cart')->group(function () {
@@ -220,6 +224,11 @@ Route::middleware(['auth:sanctum', 'admin.access'])->prefix('admin')->group(func
     Route::put('/shipping/{id}', [ShippingAdminController::class, 'update'])->middleware('permission:settings.update');
     Route::delete('/shipping/{id}', [ShippingAdminController::class, 'destroy'])->middleware('permission:settings.update');
     Route::post('/policies/shipping', [ShippingAdminController::class, 'updatePolicy'])->middleware('permission:settings.update');
+
+    // Admin Shiprocket Shipping Rate Calculator & Shipment APIs
+    Route::post('/shipping/rates/calculate', [ShiprocketAdminController::class, 'calculateRates']);
+    Route::post('/orders/{id}/create-shipment', [ShiprocketAdminController::class, 'createShipment']);
+    Route::get('/orders/{id}/track-shipment', [ShiprocketAdminController::class, 'trackShipment']);
 
     // Admin Returns APIs (orders.view & orders.update)
     Route::get('/returns', [ReturnAdminController::class, 'index'])->middleware('permission:orders.view');
