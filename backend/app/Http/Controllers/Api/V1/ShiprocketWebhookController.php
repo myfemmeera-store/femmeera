@@ -113,15 +113,17 @@ class ShiprocketWebhookController extends Controller
 
         DB::table('orders')->where('id', $order->id)->update($updateFields);
 
-        // Record Order Status Audit History
+        // Record Order Status Audit History (if table exists)
         if ($mappedStatus && $order->order_status !== $mappedStatus) {
-            DB::table('order_status_history')->insert([
-                'order_id' => $order->id,
-                'previous_status' => $order->order_status,
-                'new_status' => $mappedStatus,
-                'comment' => "Shiprocket Webhook update: {$currentStatus}",
-                'created_at' => now(),
-            ]);
+            if (\Illuminate\Support\Facades\Schema::hasTable('order_status_history')) {
+                DB::table('order_status_history')->insert([
+                    'order_id' => $order->id,
+                    'previous_status' => $order->order_status,
+                    'new_status' => $mappedStatus,
+                    'comment' => "Shiprocket Webhook update: {$currentStatus}",
+                    'created_at' => now(),
+                ]);
+            }
         }
 
         return response()->json([
