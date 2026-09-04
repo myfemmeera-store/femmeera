@@ -27,8 +27,8 @@ class ShiprocketWebhookController extends Controller
         }
 
         // 1. Verify x-api-key authentication header securely against SHIPROCKET_WEBHOOK_TOKEN
-        $incomingToken = $request->header('x-api-key') ?: $request->header('X-Api-Key');
-        $expectedToken = env('SHIPROCKET_WEBHOOK_TOKEN');
+        $incomingToken = $request->header('x-api-key') ?: $request->header('X-Api-Key') ?: $request->header('x_api_key') ?: $request->input('x-api-key');
+        $expectedToken = config('services.shiprocket.webhook_token') ?: env('SHIPROCKET_WEBHOOK_TOKEN');
 
         if (!empty($expectedToken)) {
             if (empty($incomingToken) || !hash_equals((string) $expectedToken, (string) $incomingToken)) {

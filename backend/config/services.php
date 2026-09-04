@@ -41,4 +41,10 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', 'https://femmeera.com/auth/google/callback'),
     ],
 
+    'shiprocket' => [
+        'email' => env('SHIPROCKET_EMAIL'),
+        'password' => env('SHIPROCKET_PASSWORD'),
+        'webhook_token' => env('SHIPROCKET_WEBHOOK_TOKEN'),
+    ],
+
 ];
