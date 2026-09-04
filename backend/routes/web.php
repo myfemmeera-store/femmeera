@@ -12,6 +12,10 @@ Route::get('/', function () {
 Route::get('/auth/google/redirect', [\App\Http\Controllers\Api\V1\AuthController::class, 'googleRedirect']);
 Route::get('/auth/google/callback', [\App\Http\Controllers\Api\V1\AuthController::class, 'googleCallback']);
 
+// Webhook endpoints directly accessible under /api/ (outside /api/v1 prefix)
+Route::match(['get', 'post'], '/api/shiprocket/webhook', [\App\Http\Controllers\Api\V1\ShiprocketWebhookController::class, 'handleWebhook']);
+Route::match(['get', 'post'], '/api/shipment-updates', [\App\Http\Controllers\Api\V1\ShiprocketWebhookController::class, 'handleWebhook']);
+
 // Dynamic Storage Media File Server (Multi-location search for Hostinger compatibility)
 Route::get('/storage/{path}', function ($path) {
     try {

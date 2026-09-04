@@ -66,8 +66,8 @@ Route::prefix('auth')->group(function () {
 // Public Webhook Callbacks (Exempt from auth)
 Route::post('/payments/webhook/razorpay', [PaymentWebhookController::class, 'handleRazorpay']);
 Route::post('/webhooks/razorpay', [PaymentWebhookController::class, 'handleRazorpay']);
-Route::post('/shipment-updates', [ShiprocketWebhookController::class, 'handleWebhook']);
-Route::post('/shiprocket/webhook', [ShiprocketWebhookController::class, 'handleWebhook']);
+Route::match(['get', 'post'], '/shipment-updates', [ShiprocketWebhookController::class, 'handleWebhook']);
+Route::match(['get', 'post'], '/shiprocket/webhook', [ShiprocketWebhookController::class, 'handleWebhook']);
 
 // Public Cart & Shipping APIs (Supports both guest & logged in users)
 Route::prefix('cart')->group(function () {

@@ -17,6 +17,15 @@ class ShiprocketWebhookController extends Controller
      */
     public function handleWebhook(Request $request): JsonResponse
     {
+        // 0. Handle GET request (e.g., when tested directly in browser)
+        if ($request->isMethod('get')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Shiprocket webhook endpoint is active and operational. Please send a POST request with x-api-key header to trigger webhook processing.',
+                'endpoint' => $request->url(),
+            ], 200);
+        }
+
         // 1. Verify x-api-key authentication header securely against SHIPROCKET_WEBHOOK_TOKEN
         $incomingToken = $request->header('x-api-key') ?: $request->header('X-Api-Key');
         $expectedToken = env('SHIPROCKET_WEBHOOK_TOKEN');
