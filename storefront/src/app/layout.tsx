@@ -4,6 +4,7 @@ import './globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { VisitorTracker } from '@/components/layout/VisitorTracker';
 import { JsonLd } from '@/components/ui/JsonLd';
 
 const playfair = Playfair_Display({
@@ -38,6 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`h-full ${playfair.variable} ${jakarta.variable}`}>
       <body className="flex flex-col min-h-screen bg-[#FDFBF7] text-neutral-900 antialiased selection:bg-[#B38548] selection:text-white font-sans">
+        <VisitorTracker />
         <JsonLd type="Organization" />
         <Header />
         <main className="flex-1 pb-16 sm:pb-0">{children}</main>

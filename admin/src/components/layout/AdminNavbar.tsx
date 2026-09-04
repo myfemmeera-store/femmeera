@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Sparkles,
   ExternalLink,
+  Users,
 } from 'lucide-react';
 import { User } from '@/types';
 import { authService } from '@/services/authService';
@@ -39,6 +40,38 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onOpenMobileMenu
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'orders'>('all');
   const notifRef = useRef<HTMLDivElement>(null);
+
+  const [visitorStats, setVisitorStats] = useState<{ live_visitors: number; total_visitors: number }>({
+    live_visitors: 0,
+    total_visitors: 0,
+  });
+
+  // Poll live & total visitors count every 5 seconds
+  useEffect(() => {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.femmeera.com/api/v1';
+
+    const fetchVisitorStats = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('femmeera_admin_token') : null;
+        const res = await fetch(`${apiBaseUrl}/admin/analytics/visitors`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          setVisitorStats({
+            live_visitors: json.data.live_visitors || 0,
+            total_visitors: json.data.total_visitors || 0,
+          });
+        }
+      } catch (err) {
+        // Silent fallback
+      }
+    };
+
+    fetchVisitorStats();
+    const interval = setInterval(fetchVisitorStats, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Initial Sample Notifications (Simulating live store events)
   const [notifications, setNotifications] = useState<NotificationItem[]>([
@@ -163,6 +196,32 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onOpenMobileMenu
 
       {/* Right Header Controls */}
       <div className="flex items-center space-x-2 sm:space-x-3">
+        {/* Live Visitors & Total Visitors Badges (Before Notifications Section) */}
+        <div className="flex items-center space-x-1.5 sm:space-x-2 mr-1 sm:mr-2">
+          {/* Live Visitors Badge */}
+          <div
+            className="flex items-center space-x-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-full text-emerald-800 text-xs font-bold shadow-2xs"
+            title="Real-Time Active Visitors on Femmeera Storefront"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="hidden sm:inline font-sans text-[11px] uppercase tracking-wider text-emerald-700">Live:</span>
+            <span className="font-mono font-extrabold text-emerald-900">{visitorStats.live_visitors}</span>
+          </div>
+
+          {/* Total Visitors Badge */}
+          <div
+            className="flex items-center space-x-1.5 px-2.5 py-1 bg-neutral-100 border border-neutral-200/80 rounded-full text-neutral-800 text-xs font-bold shadow-2xs"
+            title="All-Time Total Unique Visitors Count"
+          >
+            <Users className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+            <span className="hidden sm:inline font-sans text-[11px] uppercase tracking-wider text-neutral-500">Total:</span>
+            <span className="font-mono font-extrabold text-neutral-900">{visitorStats.total_visitors.toLocaleString()}</span>
+          </div>
+        </div>
+
         {/* Interactive Notifications Icon & Popover */}
         <div className="relative" ref={notifRef}>
           <button

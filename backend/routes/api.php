@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\V1\PaymentWebhookController;
 use App\Http\Controllers\Api\V1\PublicCatalogController;
 use App\Http\Controllers\Api\V1\PublicPolicyController;
 use App\Http\Controllers\Api\V1\ShippingController;
+use App\Http\Controllers\Api\V1\VisitorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -96,6 +97,13 @@ Route::prefix('shipping')->group(function () {
     Route::post('/check-serviceability', [ShippingController::class, 'checkServiceability']);
 });
 
+// Visitor Analytics Tracking APIs
+Route::prefix('visitor')->group(function () {
+    Route::post('/heartbeat', [VisitorController::class, 'heartbeat']);
+    Route::post('/leave', [VisitorController::class, 'leave']);
+    Route::get('/stats', [VisitorController::class, 'getStats']);
+});
+
 // =========================================================================
 // 2. AUTHENTICATED CUSTOMER & USER ROUTES (Requires Sanctum Bearer Token)
 // =========================================================================
@@ -149,6 +157,7 @@ Route::middleware(['auth:sanctum', 'admin.access'])->prefix('admin')->group(func
     
     // Dashboard (Requires reports.view)
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->middleware('permission:reports.view');
+    Route::get('/analytics/visitors', [VisitorController::class, 'getStats']);
 
     // Admin Users Management (SUPER_ADMIN / users.* permissions)
     Route::get('/users', [AdminUserController::class, 'index'])->middleware('permission:users.view');
