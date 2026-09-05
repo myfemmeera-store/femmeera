@@ -227,6 +227,7 @@ Route::middleware(['auth:sanctum', 'admin.access'])->prefix('admin')->group(func
     Route::post('/policies/shipping', [ShippingAdminController::class, 'updatePolicy'])->middleware('permission:settings.update');
 
     // Admin Shiprocket Shipping Rate Calculator & Shipment APIs
+    Route::get('/shipping/shiprocket-test', [ShiprocketAdminController::class, 'testConnection']);
     Route::post('/shipping/rates/calculate', [ShiprocketAdminController::class, 'calculateRates']);
     Route::post('/orders/{id}/create-shipment', [ShiprocketAdminController::class, 'createShipment']);
     Route::get('/orders/{id}/track-shipment', [ShiprocketAdminController::class, 'trackShipment']);

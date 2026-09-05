@@ -271,4 +271,33 @@ class ShiprocketAdminController extends Controller
             'data' => Order::with(['items', 'user'])->find($id),
         ]);
     }
+
+    /**
+     * Test & Diagnostics for Shiprocket Connection
+     * GET /api/v1/admin/shipping/shiprocket-test
+     */
+    public function testConnection(): JsonResponse
+    {
+        $token = $this->shiprocketService->getToken();
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to authenticate with Shiprocket API. Check SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD in .env',
+                'pickup_locations' => [],
+            ], 422);
+        }
+
+        $pickupLocations = $this->shiprocketService->getPickupLocations();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully connected to Shiprocket API!',
+            'data' => [
+                'connection_status' => 'CONNECTED',
+                'token_present' => true,
+                'pickup_locations' => $pickupLocations,
+                'default_pickup_location' => $pickupLocations[0] ?? 'Primary',
+            ],
+        ]);
+    }
 }
