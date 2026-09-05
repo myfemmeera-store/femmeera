@@ -16,6 +16,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  React.useEffect(() => {
+    const token = authService.getStoredToken();
+    if (token) {
+      router.replace('/dashboard');
+    }
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
