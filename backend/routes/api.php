@@ -68,6 +68,7 @@ Route::post('/payments/webhook/razorpay', [PaymentWebhookController::class, 'han
 Route::post('/webhooks/razorpay', [PaymentWebhookController::class, 'handleRazorpay']);
 Route::match(['get', 'post'], '/shipment-updates', [ShiprocketWebhookController::class, 'handleWebhook']);
 Route::match(['get', 'post'], '/shiprocket/webhook', [ShiprocketWebhookController::class, 'handleWebhook']);
+Route::post('/newsletter/subscribe', [\App\Http\Controllers\Api\V1\NewsletterController::class, 'subscribe']);
 
 // Public Cart & Shipping APIs (Supports both guest & logged in users)
 Route::prefix('cart')->group(function () {

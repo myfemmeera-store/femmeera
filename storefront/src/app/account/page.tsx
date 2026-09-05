@@ -38,15 +38,15 @@ export default function AccountPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [gender, setGender] = useState('Female');
+  const [gender, setGender] = useState('Not specified (Optional)');
   const [avatarUrl, setAvatarUrl] = useState('/images/default_user_avatar.jpg');
   
-  // Shipping Address State
-  const [addressLine1, setAddressLine1] = useState('Flat 402, Royal Palms Residency');
-  const [addressLine2, setAddressLine2] = useState('M.G. Road, Bandra West');
-  const [city, setCity] = useState('Mumbai');
-  const [state, setState] = useState('Maharashtra');
-  const [pincode, setPincode] = useState('400050');
+  // Shipping Address State (Starts empty for new / Google accounts)
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pincode, setPincode] = useState('');
   const [country, setCountry] = useState('India');
   const [isEditingAddress, setIsEditingAddress] = useState(false);
 
@@ -64,19 +64,14 @@ export default function AccountPage() {
       return;
     }
 
-    const currentUser = stored || ({
-      id: 1,
-      name: 'Ananya Sharma',
-      email: 'ananya.sharma@example.com',
-      phone: '+91 98765 43210',
-      user_type: 'CUSTOMER',
-      status: 'ACTIVE',
-    } as any);
+    const currentUser = stored || null;
 
-    setUser(currentUser);
-    setName(currentUser.name || 'Ananya Sharma');
-    setEmail(currentUser.email || 'ananya.sharma@example.com');
-    setPhone(currentUser.phone || '+91 98765 43210');
+    if (currentUser) {
+      setUser(currentUser);
+      setName(currentUser.name || '');
+      setEmail(currentUser.email || '');
+      setPhone(currentUser.phone || '');
+    }
     
     // Check saved avatar photo from localStorage if present
     const savedPhoto = localStorage.getItem('femmeera_customer_photo');
@@ -89,12 +84,12 @@ export default function AccountPage() {
     if (savedAddress) {
       try {
         const parsed = JSON.parse(savedAddress);
-        setAddressLine1(parsed.addressLine1 || addressLine1);
-        setAddressLine2(parsed.addressLine2 || addressLine2);
-        setCity(parsed.city || city);
-        setState(parsed.state || state);
-        setPincode(parsed.pincode || pincode);
-        setCountry(parsed.country || country);
+        setAddressLine1(parsed.addressLine1 || '');
+        setAddressLine2(parsed.addressLine2 || '');
+        setCity(parsed.city || '');
+        setState(parsed.state || '');
+        setPincode(parsed.pincode || '');
+        setCountry(parsed.country || 'India');
       } catch {}
     }
 
@@ -528,7 +523,7 @@ export default function AccountPage() {
                     </button>
                   </div>
                 </form>
-              ) : (
+              ) : addressLine1 ? (
                 /* Address Readonly Card */
                 <div className="p-4 bg-[#FAF6F0]/80 rounded-2xl border border-[#EFE6D8] space-y-3">
                   <div className="flex items-center justify-between">
@@ -541,15 +536,23 @@ export default function AccountPage() {
 
                   <div className="text-xs text-neutral-700 space-y-1 font-medium leading-relaxed">
                     <p className="font-bold text-neutral-900">{addressLine1}</p>
-                    <p>{addressLine2}</p>
+                    {addressLine2 && <p>{addressLine2}</p>}
                     <p>{city}, {state} - <strong className="font-bold text-neutral-900">{pincode}</strong></p>
                     <p className="text-neutral-500 font-sans">{country}</p>
                   </div>
 
                   <div className="pt-2 border-t border-[#E8DEC8] text-xs text-neutral-600 flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-[#B38548]" />
-                    <span>Deliver Contact: <strong className="text-neutral-900 font-bold">{phone}</strong></span>
+                    <span>Delivery Contact: <strong className="text-neutral-900 font-bold">{phone || 'Not provided yet'}</strong></span>
                   </div>
+                </div>
+              ) : (
+                <div className="p-6 bg-[#FAF6F0]/80 rounded-2xl border border-dashed border-[#EFE6D8] text-center text-xs text-neutral-500 space-y-2">
+                  <MapPin className="w-8 h-8 mx-auto text-[#B38548] opacity-70" />
+                  <p className="font-bold text-neutral-800">No Shipping Address Saved</p>
+                  <p className="text-[11px] text-neutral-500">
+                    When you purchase a product, your delivery address will be saved automatically here to your profile.
+                  </p>
                 </div>
               )}
             </div>

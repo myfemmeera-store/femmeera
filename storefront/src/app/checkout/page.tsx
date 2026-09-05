@@ -202,6 +202,47 @@ export default function CheckoutPage() {
       }
 
       const createdOrder = orderRes.data.order;
+
+      // Auto-save entered shipping address & phone number to customer user profile
+      if (typeof window !== 'undefined' && shippingPayload) {
+        const addressObj = {
+          addressLine1: shippingPayload.address,
+          addressLine2: shippingPayload.address_line_2 !== shippingPayload.address ? shippingPayload.address_line_2 : '',
+          city: shippingPayload.city,
+          state: shippingPayload.state,
+          pincode: shippingPayload.pincode,
+          country: 'India',
+        };
+        localStorage.setItem('femmeera_customer_address', JSON.stringify(addressObj));
+
+        const userStr = localStorage.getItem('femmeera_customer_user');
+        if (userStr) {
+          try {
+            const userObj = JSON.parse(userStr);
+            if (shippingPayload.name) userObj.name = shippingPayload.name;
+            if (shippingPayload.phone) userObj.phone = shippingPayload.phone;
+            localStorage.setItem('femmeera_customer_user', JSON.stringify(userObj));
+            window.dispatchEvent(new Event('femmeera-auth-updated'));
+          } catch {}
+        }
+      }
+
+      // Save to backend address book if authenticated
+      try {
+        addressService.addAddress({
+          type: 'SHIPPING',
+          name: shippingPayload.name,
+          phone: shippingPayload.phone,
+          address_line_1: shippingPayload.address,
+          address_line_2: shippingPayload.address_line_2,
+          city: shippingPayload.city,
+          state: shippingPayload.state,
+          postal_code: shippingPayload.pincode,
+          country: 'India',
+          is_default: true,
+        }).catch(() => {});
+      } catch {}
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('femmeera_last_order', createdOrder.order_number);
         try {

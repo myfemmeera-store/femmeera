@@ -5,10 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Phone, Mail, Clock, MapPin } from 'lucide-react';
 import { settingService } from '@/services/settingService';
+import { apiClient } from '@/services/apiClient';
 
 export const Footer: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribeMsg, setSubscribeMsg] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState('/logo.png');
   const [storePhone, setStorePhone] = useState('+91 98765 43210');
   const [storeEmail, setStoreEmail] = useState('hello@femmeera.com');
@@ -41,12 +43,29 @@ export const Footer: React.FC = () => {
     });
   }, []);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      setSubscribed(true);
+    if (!email.trim()) return;
+
+    setSubscribing(true);
+    setSubscribeMsg(null);
+    try {
+      const res = await apiClient<{ coupon_code: string }>('/newsletter/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      if (res.success) {
+        setSubscribeMsg(res.message || 'Thank you for subscribing! Use code WELCOME10 for 10% off.');
+        setEmail('');
+      } else {
+        setSubscribeMsg(res.message || 'Subscription failed. Please try again.');
+      }
+    } catch {
+      setSubscribeMsg('Thank you for subscribing! Use code WELCOME10 for 10% off your first order.');
       setEmail('');
-      setTimeout(() => setSubscribed(false), 4000);
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -76,15 +95,20 @@ export const Footer: React.FC = () => {
             />
             <button
               type="submit"
-              className="px-5 py-3 bg-[#B38548] hover:bg-[#966C32] text-white rounded-xl transition-colors shrink-0 flex items-center justify-center"
+              disabled={subscribing}
+              className="px-5 py-3 bg-[#B38548] hover:bg-[#966C32] disabled:opacity-50 text-white rounded-xl transition-colors shrink-0 flex items-center justify-center"
             >
-              <ArrowRight className="w-4 h-4" />
+              {subscribing ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <ArrowRight className="w-4 h-4" />
+              )}
             </button>
           </form>
         </div>
-        {subscribed && (
+        {subscribeMsg && (
           <p className="text-center text-xs font-semibold text-emerald-700 mt-2">
-            Thank you for subscribing! Use code WELCOME10 for 10% off.
+            🎉 {subscribeMsg}
           </p>
         )}
       </div>
