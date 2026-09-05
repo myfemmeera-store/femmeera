@@ -236,6 +236,9 @@ class CartService
         foreach ($rawItems as $item) {
             $variant = $item->variant;
             if (!$variant || $variant->status !== 'ACTIVE' || !$variant->product || $variant->product->status !== 'ACTIVE') {
+                if (!$variant || !$variant->product) {
+                    $item->delete();
+                }
                 $validationNotices[] = "An item in your cart is no longer available and was excluded.";
                 continue;
             }

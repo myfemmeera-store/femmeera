@@ -77,7 +77,7 @@ class CartCheckoutService
                 $qty = (int)$item['quantity'];
 
                 if ($qty <= 0) {
-                    throw new HttpException(400, 'Quantity must be at least 1.');
+                    continue;
                 }
 
                 // Row-level locking to prevent race conditions on stock (Spec Section 32)
@@ -87,11 +87,17 @@ class CartCheckoutService
                     ->first();
 
                 if (!$variant || !$variant->product) {
-                    throw new HttpException(404, "Product variant #{$variantId} not found.");
+                    // Stale / deleted variant - automatically purge from cart
+                    CartItem::where('variant_id', $variantId)->delete();
+                    \Illuminate\Support\Facades\Log::warning("CartCheckoutService: Purged non-existent product variant #{$variantId} from cart.");
+                    continue;
                 }
 
                 if ($variant->status !== 'ACTIVE' || $variant->product->status !== 'ACTIVE') {
-                    throw new HttpException(400, "Product {$variant->product->name} is no longer available.");
+                    // Inactive product or variant - automatically purge from cart
+                    CartItem::where('variant_id', $variantId)->delete();
+                    \Illuminate\Support\Facades\Log::warning("CartCheckoutService: Purged inactive variant #{$variantId} ({$variant->product->name}) from cart.");
+                    continue;
                 }
 
                 // Verify stock availability
@@ -120,6 +126,10 @@ class CartCheckoutService
                     'discount_amount' => 0.00,
                     'total_amount' => $lineTotal,
                 ];
+            }
+
+            if (empty($orderItemsToCreate)) {
+                throw new HttpException(400, 'The items in your cart are no longer available. Please add items to your cart.');
             }
 
             // 3. Authoritative server-side calculations (Spec Section 33)
