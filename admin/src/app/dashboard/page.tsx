@@ -14,6 +14,10 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visitorStats, setVisitorStats] = useState<{ live_visitors: number; total_visitors: number }>({
+    live_visitors: 0,
+    total_visitors: 0,
+  });
 
   const fetchDashboardStats = async () => {
     setIsLoading(true);
@@ -38,6 +42,26 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardStats();
+
+    // Poll live visitor stats every 5 seconds
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.femmeera.com/api/v1';
+    const fetchVisitorStats = async () => {
+      try {
+        let res = await fetch(`${apiBaseUrl}/admin/analytics/visitors`);
+        if (!res.ok) res = await fetch(`${apiBaseUrl}/visitor/stats`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setVisitorStats({
+            live_visitors: json.data.live_visitors ?? 0,
+            total_visitors: json.data.total_visitors ?? 0,
+          });
+        }
+      } catch (err) {}
+    };
+
+    fetchVisitorStats();
+    const interval = setInterval(fetchVisitorStats, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   if (isLoading) {
@@ -76,6 +100,35 @@ export default function DashboardPage() {
         <div className="inline-flex items-center text-xs font-semibold text-neutral-500 bg-white border border-neutral-200 px-3 py-1.5 rounded-lg shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
           Realtime Store Monitor
+        </div>
+      </div>
+
+      {/* Realtime Live & Total Visitor Traffic Banner */}
+      <div className="p-4 sm:p-5 bg-gradient-to-r from-neutral-900 via-neutral-800 to-black text-white rounded-2xl shadow-md border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center space-x-3">
+          <div className="relative flex h-3.5 w-3.5 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span>
+          </div>
+          <div>
+            <h3 className="font-extrabold text-sm sm:text-base tracking-tight text-white flex items-center gap-2">
+              <span>Real-Time Visitor Traffic</span>
+              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full">Live Monitor</span>
+            </h3>
+            <p className="text-xs text-neutral-400 mt-0.5">Active storefront visitors & total unique visits counter</p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-3 sm:space-x-6 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10">
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">🟢 Live Active:</span>
+            <span className="font-mono font-black text-lg sm:text-xl text-white">{visitorStats.live_visitors}</span>
+          </div>
+          <div className="h-4 w-px bg-white/20" />
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">👥 Total Visitors:</span>
+            <span className="font-mono font-black text-lg sm:text-xl text-white">{visitorStats.total_visitors.toLocaleString()}</span>
+          </div>
         </div>
       </div>
 
