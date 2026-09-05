@@ -162,7 +162,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, onNavigate }) 
 
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+          const isActive =
+            pathname === item.href ||
+            (item.href !== '/dashboard' &&
+              pathname.startsWith(item.href) &&
+              !navItems.some(
+                (other) =>
+                  other.href !== item.href &&
+                  other.href.startsWith(item.href) &&
+                  (pathname === other.href || pathname.startsWith(other.href + '/'))
+              ));
 
           return (
             <Link
