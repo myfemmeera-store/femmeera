@@ -234,6 +234,19 @@ export default function OrderDetailsPage() {
             </Button>
           </Link>
 
+          {(order.carrier || (order as any).shiprocket_shipment_id || (order as any).awb_code || order.order_status === 'SHIPPED') && order.order_status !== 'CANCELLED' && (
+            <Button
+              variant="danger"
+              size="sm"
+              isLoading={isCancellingShipment}
+              onClick={handleCancelShipment}
+              leftIcon={<Ban className="w-4 h-4 text-white" />}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+            >
+              Cancel Shiprocket Parcel
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"
