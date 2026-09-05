@@ -53,18 +53,33 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onOpenMobileMenu
     const fetchVisitorStats = async () => {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('femmeera_admin_token') : null;
-        const res = await fetch(`${apiBaseUrl}/admin/analytics/visitors`, {
+        let res = await fetch(`${apiBaseUrl}/admin/analytics/visitors`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
+        if (!res.ok) {
+          res = await fetch(`${apiBaseUrl}/visitor/stats`);
+        }
         const json = await res.json();
         if (json.success && json.data) {
           setVisitorStats({
-            live_visitors: json.data.live_visitors || 0,
-            total_visitors: json.data.total_visitors || 0,
+            live_visitors: json.data.live_visitors ?? 0,
+            total_visitors: json.data.total_visitors ?? 0,
           });
         }
       } catch (err) {
-        // Silent fallback
+        // Fallback fetch
+        try {
+          const res2 = await fetch(`${apiBaseUrl}/visitor/stats`);
+          const json2 = await res2.json();
+          if (json2.success && json2.data) {
+            setVisitorStats({
+              live_visitors: json2.data.live_visitors ?? 0,
+              total_visitors: json2.data.total_visitors ?? 0,
+            });
+          }
+        } catch (e) {
+          // Silent fallback
+        }
       }
     };
 
@@ -200,24 +215,24 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onOpenMobileMenu
         <div className="flex items-center space-x-1.5 sm:space-x-2 mr-1 sm:mr-2">
           {/* Live Visitors Badge */}
           <div
-            className="flex items-center space-x-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-full text-emerald-800 text-xs font-bold shadow-2xs"
+            className="flex items-center space-x-1 px-2 sm:px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-full text-emerald-800 text-xs font-bold shadow-2xs"
             title="Real-Time Active Visitors on Femmeera Storefront"
           >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className="hidden sm:inline font-sans text-[11px] uppercase tracking-wider text-emerald-700">Live:</span>
+            <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-emerald-700 font-black">Live:</span>
             <span className="font-mono font-extrabold text-emerald-900">{visitorStats.live_visitors}</span>
           </div>
 
           {/* Total Visitors Badge */}
           <div
-            className="flex items-center space-x-1.5 px-2.5 py-1 bg-neutral-100 border border-neutral-200/80 rounded-full text-neutral-800 text-xs font-bold shadow-2xs"
+            className="flex items-center space-x-1 px-2 sm:px-2.5 py-1 bg-neutral-100 border border-neutral-200/80 rounded-full text-neutral-800 text-xs font-bold shadow-2xs"
             title="All-Time Total Unique Visitors Count"
           >
             <Users className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-            <span className="hidden sm:inline font-sans text-[11px] uppercase tracking-wider text-neutral-500">Total:</span>
+            <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-neutral-500 font-black">Total:</span>
             <span className="font-mono font-extrabold text-neutral-900">{visitorStats.total_visitors.toLocaleString()}</span>
           </div>
         </div>

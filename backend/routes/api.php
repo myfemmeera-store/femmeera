@@ -107,6 +107,7 @@ Route::prefix('visitor')->group(function () {
     Route::post('/leave', [VisitorController::class, 'leave']);
     Route::get('/stats', [VisitorController::class, 'getStats']);
 });
+Route::get('/admin/analytics/visitors', [VisitorController::class, 'getStats']);
 
 // =========================================================================
 // 2. AUTHENTICATED CUSTOMER & USER ROUTES (Requires Sanctum Bearer Token)
