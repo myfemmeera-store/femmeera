@@ -72,26 +72,21 @@ class ShiprocketWebhookController extends Controller
         $mappedStatus = null;
         $statusLower = strtolower($currentStatus);
 
-        if (str_contains($statusLower, 'delivered')) {
+        if (str_contains($statusLower, 'cancel') || str_contains($statusLower, 'rto') || str_contains($statusLower, 'return') || str_contains($statusLower, 'reject') || str_contains($statusLower, 'void')) {
+            $mappedStatus = 'CANCELLED';
+        } elseif (str_contains($statusLower, 'delivered')) {
             $mappedStatus = 'DELIVERED';
         } elseif (str_contains($statusLower, 'out for delivery')) {
             $mappedStatus = 'OUT_FOR_DELIVERY';
-        } elseif (str_contains($statusLower, 'shipped') || str_contains($statusLower, 'in transit') || str_contains($statusLower, 'pickup')) {
+        } elseif (str_contains($statusLower, 'shipped') || str_contains($statusLower, 'in transit') || str_contains($statusLower, 'pickup') || str_contains($statusLower, 'dispatched')) {
             $mappedStatus = 'SHIPPED';
-        } elseif (str_contains($statusLower, 'cancelled') || str_contains($statusLower, 'rto') || str_contains($statusLower, 'returned')) {
-            $mappedStatus = 'CANCELLED';
         } elseif (str_contains($statusLower, 'confirmed') || str_contains($statusLower, 'processing')) {
             $mappedStatus = 'CONFIRMED';
         }
 
-        // 4. Idempotency Check: Do not duplicate update if order is already in target status
-        if ($mappedStatus && $order->order_status === $mappedStatus) {
-            return response()->json(['success' => true, 'message' => 'Order already in status ' . $mappedStatus], 200);
-        }
-
-        // 5. Update Order & Shipment Status
+        // 4. Update Order & Shipment Status in Database
         $updateFields = [
-            'shipment_status' => $currentStatus ?: $order->shipment_status,
+            'shipment_status' => $currentStatus ?: ($mappedStatus ?: $order->shipment_status),
             'updated_at' => now(),
         ];
 
@@ -113,22 +108,25 @@ class ShiprocketWebhookController extends Controller
 
         DB::table('orders')->where('id', $order->id)->update($updateFields);
 
-        // Record Order Status Audit History (if table exists)
-        if ($mappedStatus && $order->order_status !== $mappedStatus) {
-            if (\Illuminate\Support\Facades\Schema::hasTable('order_status_history')) {
-                DB::table('order_status_history')->insert([
-                    'order_id' => $order->id,
-                    'previous_status' => $order->order_status,
-                    'new_status' => $mappedStatus,
-                    'comment' => "Shiprocket Webhook update: {$currentStatus}",
-                    'created_at' => now(),
-                ]);
+        // Record Order Status Audit History
+        if (\Illuminate\Support\Facades\Schema::hasTable('order_status_history')) {
+            $comment = "Shiprocket Webhook update: {$currentStatus} (Synced from Shiprocket)";
+            if ($mappedStatus === 'CANCELLED') {
+                $comment = "Shiprocket Webhook: Order shipment cancelled in Shiprocket account (Status: {$currentStatus})";
             }
+
+            DB::table('order_status_history')->insert([
+                'order_id' => $order->id,
+                'previous_status' => $order->order_status,
+                'new_status' => $mappedStatus ?: $order->order_status,
+                'comment' => $comment,
+                'created_at' => now(),
+            ]);
         }
 
         return response()->json([
             'success' => true,
-            'message' => "Order #{$order->order_number} status updated to {$mappedStatus}",
+            'message' => "Order #{$order->order_number} status updated to " . ($mappedStatus ?: $currentStatus),
         ], 200);
     }
 }

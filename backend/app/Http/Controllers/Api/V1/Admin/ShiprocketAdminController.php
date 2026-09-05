@@ -213,6 +213,20 @@ class ShiprocketAdminController extends Controller
         }
 
         $trackRes = $this->shiprocketService->trackByAwb($awbCode);
+
+        // Auto-sync cancellation status if tracking response indicates shipment was cancelled in Shiprocket
+        if (!empty($trackRes['success']) && !empty($trackRes['data'])) {
+            $data = $trackRes['data'];
+            $statusStr = strtoupper((string) ($data['current_status'] ?? $data['shipment_track'][0]['current_status'] ?? ''));
+            if (str_contains(strtolower($statusStr), 'cancel') || str_contains(strtolower($statusStr), 'rto') || str_contains(strtolower($statusStr), 'reject')) {
+                DB::table('orders')->where('id', $order->id)->update([
+                    'shipment_status' => 'CANCELLED',
+                    'order_status' => 'CANCELLED',
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
         return response()->json($trackRes);
     }
 
