@@ -46,45 +46,33 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onOpenMobileMenu
     total_visitors: 0,
   });
 
-  // Poll live & total visitors count every 5 seconds
+  // Poll live & total visitors count every 4 seconds
   useEffect(() => {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.femmeera.com/api/v1';
-
     const fetchVisitorStats = async () => {
-      try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('femmeera_admin_token') : null;
-        let res = await fetch(`${apiBaseUrl}/admin/analytics/visitors`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!res.ok) {
-          res = await fetch(`${apiBaseUrl}/visitor/stats`);
-        }
-        const json = await res.json();
-        if (json.success && json.data) {
-          setVisitorStats({
-            live_visitors: json.data.live_visitors ?? 0,
-            total_visitors: json.data.total_visitors ?? 0,
-          });
-        }
-      } catch (err) {
-        // Fallback fetch
+      const urls = [
+        'https://api.femmeera.com/api/v1/visitor/stats',
+        'https://api.femmeera.com/api/v1/admin/analytics/visitors',
+      ];
+
+      for (const url of urls) {
         try {
-          const res2 = await fetch(`${apiBaseUrl}/visitor/stats`);
-          const json2 = await res2.json();
-          if (json2.success && json2.data) {
-            setVisitorStats({
-              live_visitors: json2.data.live_visitors ?? 0,
-              total_visitors: json2.data.total_visitors ?? 0,
-            });
+          const res = await fetch(url, { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+              setVisitorStats({
+                live_visitors: json.data.live_visitors ?? 0,
+                total_visitors: json.data.total_visitors ?? 0,
+              });
+              return;
+            }
           }
-        } catch (e) {
-          // Silent fallback
-        }
+        } catch (err) {}
       }
     };
 
     fetchVisitorStats();
-    const interval = setInterval(fetchVisitorStats, 5000);
+    const interval = setInterval(fetchVisitorStats, 4000);
     return () => clearInterval(interval);
   }, []);
 
