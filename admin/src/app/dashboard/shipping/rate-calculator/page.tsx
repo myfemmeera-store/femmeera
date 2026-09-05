@@ -164,7 +164,7 @@ function RateCalculatorContent() {
       const res = await shiprocketService.createShipment(parseInt(orderIdParam), {
         courier_id: courier.courier_company_id,
         courier_name: courier.courier_name,
-        pickup_location: 'Primary',
+        pickup_location: '',
         weight: chargeableWeight,
         length,
         breadth,

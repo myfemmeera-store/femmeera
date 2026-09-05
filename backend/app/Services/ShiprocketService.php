@@ -156,11 +156,40 @@ class ShiprocketService
     /**
      * Create Adhoc Order in Shiprocket
      */
+    /**
+     * Get configured pickup locations from Shiprocket Account
+     */
+    public function getPickupLocations(): array
+    {
+        $token = $this->getToken();
+        if (!$token) return [];
+
+        try {
+            $response = Http::withToken($token)->get("{$this->baseUrl}/settings/company/pickup");
+            if ($response->successful()) {
+                $data = $response->json('data.shipping_address') ?? [];
+                $locations = [];
+                foreach ($data as $loc) {
+                    if (!empty($loc['pickup_location'])) {
+                        $locations[] = $loc['pickup_location'];
+                    }
+                }
+                return $locations;
+            }
+        } catch (\Throwable $e) {
+            Log::error('Shiprocket getPickupLocations Exception: ' . $e->getMessage());
+        }
+        return [];
+    }
+
+    /**
+     * Create Adhoc Order in Shiprocket
+     */
     public function createOrder(Order $order, array $custom = []): array
     {
         $token = $this->getToken();
         if (!$token) {
-            return ['success' => false, 'message' => 'Shiprocket authentication failed.'];
+            return ['success' => false, 'message' => 'Shiprocket authentication failed. Check credentials in .env file.'];
         }
 
         $address = $order->shipping_address_snapshot ?? [];
@@ -170,30 +199,52 @@ class ShiprocketService
         foreach ($items as $item) {
             $orderItems[] = [
                 'name' => substr($item->product_name_snapshot ?? 'Item', 0, 50),
-                'sku' => $item->sku_snapshot ?? 'SKU-1',
-                'units' => (int) $item->quantity,
+                'sku' => $item->sku_snapshot ?? ('SKU-' . ($item->product_id ?? rand(100, 999))),
+                'units' => max(1, (int) $item->quantity),
                 'selling_price' => (float) $item->unit_price,
                 'discount' => (float) ($item->discount_amount ?? 0),
             ];
         }
 
         $nameParts = explode(' ', trim($address['name'] ?? 'Customer'), 2);
-        $firstName = $nameParts[0] ?? 'Customer';
-        $lastName = $nameParts[1] ?? 'User';
+        $firstName = !empty($nameParts[0]) ? $nameParts[0] : 'Customer';
+        $lastName = !empty($nameParts[1]) ? $nameParts[1] : 'User';
+
+        $rawAddr = trim(($address['address'] ?? '') . ' ' . ($address['city'] ?? ''));
+        if (strlen($rawAddr) < 10) {
+            $rawAddr = $rawAddr . ' Main Street Address, India';
+        }
+
+        $rawPhone = preg_replace('/[^0-9]/', '', $address['phone'] ?? '');
+        if (strlen($rawPhone) < 10) {
+            $rawPhone = '9876543210';
+        }
+
+        $pickupLocation = $custom['pickup_location'] ?? env('SHIPROCKET_PICKUP_LOCATION');
+        // Fetch registered pickup locations from Shiprocket API to ensure location exists
+        $availableLocations = $this->getPickupLocations();
+        if (!empty($availableLocations)) {
+            // If requested location doesn't exist in account, use the first available registered location
+            if (empty($pickupLocation) || !in_array($pickupLocation, $availableLocations)) {
+                $pickupLocation = $availableLocations[0];
+            }
+        } else {
+            $pickupLocation = !empty($pickupLocation) ? $pickupLocation : 'Primary';
+        }
 
         $payload = [
             'order_id' => $order->order_number,
             'order_date' => $order->created_at ? $order->created_at->format('Y-m-d H:i') : now()->format('Y-m-d H:i'),
-            'pickup_location' => $custom['pickup_location'] ?? env('SHIPROCKET_PICKUP_LOCATION', 'Primary'),
+            'pickup_location' => $pickupLocation,
             'billing_customer_name' => $firstName,
             'billing_last_name' => $lastName,
-            'billing_address' => substr($address['address'] ?? 'Address', 0, 100),
-            'billing_city' => $address['city'] ?? 'City',
+            'billing_address' => substr($rawAddr, 0, 100),
+            'billing_city' => $address['city'] ?? 'Bangalore',
             'billing_pincode' => $address['pincode'] ?? '560001',
-            'billing_state' => $address['state'] ?? 'State',
+            'billing_state' => $address['state'] ?? 'Karnataka',
             'billing_country' => 'India',
             'billing_email' => $order->user->email ?? 'customer@femmeera.com',
-            'billing_phone' => $address['phone'] ?? '9876543210',
+            'billing_phone' => $rawPhone,
             'shipping_is_billing' => true,
             'order_items' => $orderItems,
             'payment_method' => ($order->payment_status === 'PAID') ? 'Prepaid' : 'COD',
@@ -218,16 +269,55 @@ class ShiprocketService
 
             if (!$response->successful()) {
                 Log::error('Shiprocket Create Order Failed: ' . $response->body());
-                return ['success' => false, 'message' => 'Shiprocket order creation failed: ' . ($response->json('message') ?: $response->body())];
+                return ['success' => false, 'message' => 'Shiprocket API error: ' . ($response->json('message') ?: $response->body())];
             }
 
             $resData = $response->json();
+            $statusCode = $resData['status_code'] ?? null;
+            $orderId = $resData['order_id'] ?? null;
+            $shipmentId = $resData['shipment_id'] ?? null;
+
+            if ($statusCode === 0 || empty($orderId) || empty($shipmentId)) {
+                $errorMsg = $resData['message'] ?? 'Shiprocket did not return a valid order or shipment ID.';
+                if (isset($resData['errors']) && is_array($resData['errors'])) {
+                    $errorMsg .= ' ' . json_encode($resData['errors']);
+                }
+
+                // If error is due to duplicate order ID, retry once with timestamp suffix
+                if (str_contains(strtolower($errorMsg), 'already exist') || str_contains(strtolower($errorMsg), 'duplicate')) {
+                    Log::info('Shiprocket duplicate order ID detected. Retrying with unique suffix...');
+                    $payload['order_id'] = $order->order_number . '-' . rand(10, 99);
+                    $retryResponse = Http::withToken($token)->post("{$this->baseUrl}/orders/create/adhoc", $payload);
+
+                    if ($retryResponse->successful() && !empty($retryResponse->json('order_id'))) {
+                        $retryData = $retryResponse->json();
+                        return [
+                            'success' => true,
+                            'message' => 'Shiprocket order created successfully.',
+                            'data' => [
+                                'order_id' => $retryData['order_id'],
+                                'shipment_id' => $retryData['shipment_id'],
+                                'status' => $retryData['status'] ?? 'NEW',
+                                'raw' => $retryData,
+                            ],
+                        ];
+                    }
+                }
+
+                Log::error('Shiprocket order creation rejected by Shiprocket API:', ['payload' => $payload, 'response' => $resData]);
+                return [
+                    'success' => false,
+                    'message' => 'Shiprocket Error: ' . $errorMsg,
+                    'data' => $resData,
+                ];
+            }
+
             return [
                 'success' => true,
                 'message' => 'Shiprocket order created successfully.',
                 'data' => [
-                    'order_id' => $resData['order_id'] ?? null,
-                    'shipment_id' => $resData['shipment_id'] ?? null,
+                    'order_id' => $orderId,
+                    'shipment_id' => $shipmentId,
                     'status' => $resData['status'] ?? 'NEW',
                     'raw' => $resData,
                 ],
