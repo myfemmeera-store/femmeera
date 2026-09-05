@@ -48,8 +48,11 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.setItem('femmeera_admin_user', JSON.stringify(res.data.user));
         }
       })
-      .catch(() => {
-        authService.logout();
+      .catch((err) => {
+        if (err?.status === 401) {
+          setUser(null);
+          router.push('/login');
+        }
       })
       .finally(() => {
         setIsLoading(false);

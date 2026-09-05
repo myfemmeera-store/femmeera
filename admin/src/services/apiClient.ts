@@ -49,9 +49,9 @@ export async function apiClient<T>(
 
     if (!response.ok || !data.success) {
       if (response.status === 401) {
-        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        if (typeof window !== 'undefined') {
           localStorage.removeItem('femmeera_admin_token');
-          window.location.href = '/login';
+          localStorage.removeItem('femmeera_admin_user');
         }
       }
 
