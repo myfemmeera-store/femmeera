@@ -88,4 +88,11 @@ export const shiprocketService = {
   async trackShipment(orderId: number): Promise<ApiResponse<any>> {
     return apiClient.get<any>(`/admin/orders/${orderId}/track-shipment`);
   },
+
+  /**
+   * Cancel Shiprocket shipment & courier parcel for an Order
+   */
+  async cancelShipment(orderId: number): Promise<ApiResponse<any>> {
+    return apiClient.post<any>(`/admin/orders/${orderId}/cancel-shipment`);
+  },
 };

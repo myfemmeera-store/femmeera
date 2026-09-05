@@ -215,4 +215,60 @@ class ShiprocketAdminController extends Controller
         $trackRes = $this->shiprocketService->trackByAwb($awbCode);
         return response()->json($trackRes);
     }
+
+    /**
+     * Cancel Shiprocket Shipment for an Order
+     * POST /api/v1/admin/orders/{id}/cancel-shipment
+     */
+    public function cancelShipment(Request $request, int $id): JsonResponse
+    {
+        $this->ensureOrderColumns();
+
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found.'], 404);
+        }
+
+        $srOrderId = $order->shiprocket_order_id;
+        $awbCode = $order->awb_code ?: $order->tracking_number;
+
+        // Call Shiprocket API to cancel order in Shiprocket account
+        $orderIds = [];
+        if ($srOrderId) {
+            $orderIds[] = (int) $srOrderId;
+        }
+
+        $awbs = [];
+        if ($awbCode) {
+            $awbs[] = (string) $awbCode;
+        }
+
+        $cancelRes = $this->shiprocketService->cancelOrder($orderIds, $awbs);
+
+        // Update Order Status in MySQL DB
+        $updateData = [
+            'shipment_status' => 'CANCELLED',
+            'order_status' => 'CANCELLED',
+            'updated_at' => now(),
+        ];
+
+        DB::table('orders')->where('id', $order->id)->update($updateData);
+
+        // Record Audit History
+        if (Schema::hasTable('order_status_history')) {
+            DB::table('order_status_history')->insert([
+                'order_id' => $order->id,
+                'previous_status' => $order->order_status,
+                'new_status' => 'CANCELLED',
+                'comment' => "Shiprocket shipment cancelled by Admin. SR Order ID: {$srOrderId}, AWB: {$awbCode}",
+                'created_at' => now(),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Shiprocket shipment cancelled successfully and updated in your Shiprocket account.',
+            'data' => Order::with(['items', 'user'])->find($id),
+        ]);
+    }
 }

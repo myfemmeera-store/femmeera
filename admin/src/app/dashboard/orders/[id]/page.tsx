@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { orderService, DetailedOrder } from '@/services/orderService';
+import { shiprocketService } from '@/services/shiprocketService';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -36,6 +37,28 @@ export default function OrderDetailsPage() {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingUrl, setTrackingUrl] = useState('');
   const [isSavingTracking, setIsSavingTracking] = useState(false);
+
+  const [isCancellingShipment, setIsCancellingShipment] = useState(false);
+
+  const handleCancelShipment = async () => {
+    if (!order) return;
+    if (!window.confirm('Are you sure you want to cancel this shipment parcel in your Shiprocket account?')) return;
+
+    setIsCancellingShipment(true);
+    try {
+      const res = await shiprocketService.cancelShipment(order.id);
+      if (res.success) {
+        showToast('Shiprocket shipment & parcel cancelled successfully!', 'success');
+        fetchOrderDetails();
+      } else {
+        showToast(res.message || 'Failed to cancel shipment in Shiprocket.', 'error');
+      }
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Error cancelling shipment.', 'error');
+    } finally {
+      setIsCancellingShipment(false);
+    }
+  };
 
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -358,19 +381,31 @@ export default function OrderDetailsPage() {
                   <p>Tracking AWB #: <span className="font-mono font-bold text-neutral-900">{(order as any).awb_code || order.tracking_number || 'Pending'}</span></p>
                 </div>
 
-                {(order.tracking_url || (order as any).awb_code) && (
-                  <div className="pt-2 border-t border-neutral-200">
+                <div className="pt-2.5 border-t border-neutral-200 flex flex-wrap items-center justify-between gap-2">
+                  {(order.tracking_url || (order as any).awb_code) && (
                     <a
                       href={order.tracking_url || `https://shiprocket.co/tracking/${(order as any).awb_code}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1 text-black font-bold underline hover:text-neutral-700"
+                      className="inline-flex items-center space-x-1 text-black font-bold underline hover:text-neutral-700 text-xs"
                     >
                       <span>Track Shipment on Shiprocket</span>
                       <Truck className="w-3.5 h-3.5" />
                     </a>
-                  </div>
-                )}
+                  )}
+
+                  {order.order_status !== 'CANCELLED' && (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      isLoading={isCancellingShipment}
+                      onClick={handleCancelShipment}
+                      className="!py-1 !px-2.5 text-xs"
+                    >
+                      Cancel Shiprocket Parcel
+                    </Button>
+                  )}
+                </div>
               </div>
             </Card>
           )}

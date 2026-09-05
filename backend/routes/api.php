@@ -230,6 +230,8 @@ Route::middleware(['auth:sanctum', 'admin.access'])->prefix('admin')->group(func
     Route::post('/shipping/rates/calculate', [ShiprocketAdminController::class, 'calculateRates']);
     Route::post('/orders/{id}/create-shipment', [ShiprocketAdminController::class, 'createShipment']);
     Route::get('/orders/{id}/track-shipment', [ShiprocketAdminController::class, 'trackShipment']);
+    Route::post('/orders/{id}/cancel-shipment', [ShiprocketAdminController::class, 'cancelShipment']);
+    Route::post('/shipping/orders/{id}/cancel-shipment', [ShiprocketAdminController::class, 'cancelShipment']);
 
     // Admin Returns APIs (orders.view & orders.update)
     Route::get('/returns', [ReturnAdminController::class, 'index'])->middleware('permission:orders.view');

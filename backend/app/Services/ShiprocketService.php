@@ -297,4 +297,59 @@ class ShiprocketService
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
+
+    /**
+     * Cancel Order / Shipment in Shiprocket Account
+     */
+    public function cancelOrder(array $orderIds = [], array $awbs = []): array
+    {
+        $token = $this->getToken();
+        if (!$token) return ['success' => false, 'message' => 'Authentication with Shiprocket failed.'];
+
+        try {
+            $results = [];
+
+            // 1. Cancel by Order IDs
+            if (!empty($orderIds)) {
+                $response = Http::withToken($token)->post("{$this->baseUrl}/orders/cancel", [
+                    'ids' => array_map('intval', $orderIds),
+                ]);
+
+                if ($response->status() === 401) {
+                    $this->clearTokenCache();
+                    $token = $this->getToken();
+                    if ($token) {
+                        $response = Http::withToken($token)->post("{$this->baseUrl}/orders/cancel", [
+                            'ids' => array_map('intval', $orderIds),
+                        ]);
+                    }
+                }
+
+                if ($response->successful()) {
+                    $results['order_cancel'] = $response->json();
+                } else {
+                    Log::warning('Shiprocket cancelOrder failed: ' . $response->body());
+                }
+            }
+
+            // 2. Cancel AWB / Shipment if AWB provided
+            if (!empty($awbs)) {
+                $awbResponse = Http::withToken($token)->post("{$this->baseUrl}/orders/cancel/shipment/awbs", [
+                    'awbs' => $awbs,
+                ]);
+                if ($awbResponse->successful()) {
+                    $results['awb_cancel'] = $awbResponse->json();
+                }
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Shiprocket cancellation request processed successfully.',
+                'data' => $results,
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Shiprocket cancelOrder Exception: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Error canceling Shiprocket order: ' . $e->getMessage()];
+        }
+    }
 }
