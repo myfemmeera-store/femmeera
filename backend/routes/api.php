@@ -146,12 +146,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/retry', [PaymentController::class, 'retry']);
     });
 
-    // Customer Order History & Returns
+    // Customer Order History, Returns & Product Reviews
     Route::prefix('customer')->group(function () {
         Route::post('/orders/checkout', [CustomerOrderController::class, 'checkout']);
         Route::get('/orders', [CustomerOrderController::class, 'index']);
         Route::get('/returns', [CustomerReturnController::class, 'index']);
         Route::post('/returns', [CustomerReturnController::class, 'store']);
+        Route::get('/reviews', [\App\Http\Controllers\Api\V1\Customer\CustomerReviewController::class, 'index']);
+        Route::post('/reviews', [\App\Http\Controllers\Api\V1\Customer\CustomerReviewController::class, 'store']);
     });
 });
 
