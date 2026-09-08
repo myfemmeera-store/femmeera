@@ -104,10 +104,10 @@ export default function LoginPage() {
         </form>
 
         {/* Quick Demo Credentials Info */}
-        <div className="pt-4 border-t border-neutral-100 text-center text-[11px] text-neutral-400">
+        {/* <div className="pt-4 border-t border-neutral-100 text-center text-[11px] text-neutral-400">
           <p>Super Admin: <code className="text-neutral-700 bg-neutral-100 px-1 py-0.5 rounded">admin@femmeera.com</code></p>
           <p className="mt-0.5">Password: <code className="text-neutral-700 bg-neutral-100 px-1 py-0.5 rounded">admin123</code></p>
-        </div>
+        </div> */}
       </div>
     </div>
   );
