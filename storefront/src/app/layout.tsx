@@ -20,25 +20,44 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Femmeera | Premium Women\'s Traditional & Western Wear',
-  description: 'Shop elegant sarees, kurtis, ethnic sets, western dresses, and tops online at Femmeera.',
+  title: 'Femmeera | Women\'s Ethnic & Contemporary Fashion',
+  description: 'Femmeera is an online fashion store offering a curated collection of women\'s clothing, including traditional sarees, kurtis, ethnic sets, and modern western dresses with free delivery across India.',
   metadataBase: new URL('https://femmeera.com'),
   alternates: {
     canonical: '/',
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
-    title: 'Femmeera | Premium Women\'s Clothing Store',
-    description: 'Discover handcrafted traditional sarees & chic western trends.',
+    title: 'Femmeera | Women\'s Ethnic & Contemporary Fashion',
+    description: 'Discover handcrafted traditional sarees, kurtis, suits, and chic western trends at Femmeera.',
     type: 'website',
     url: 'https://femmeera.com',
+    siteName: 'Femmeera',
+    locale: 'en_IN',
     images: [
       {
         url: 'https://femmeera.com/logo.png',
         width: 1200,
         height: 630,
-        alt: 'Femmeera - Premium Women\'s Traditional & Western Wear',
+        alt: 'Femmeera - Women\'s Traditional & Western Fashion',
       },
     ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Femmeera | Women\'s Ethnic & Contemporary Fashion',
+    description: 'Discover handcrafted traditional sarees, kurtis, suits, and chic western trends at Femmeera.',
+    images: ['https://femmeera.com/logo.png'],
   },
 };
 

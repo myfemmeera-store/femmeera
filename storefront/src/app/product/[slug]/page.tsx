@@ -37,29 +37,41 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   }
 
   const title = `${product.name} | Femmeera`;
+  const variants = product.variants || [];
+  const colors = Array.from(new Set(variants.map((v) => v.color?.trim()).filter(Boolean)));
+  const colorSuffix = colors.length > 0 ? ` Available in ${colors.join(', ')}.` : '';
   const rawDescription = product.description || product.short_description || `Buy ${product.name} online at Femmeera. Discover premium women's traditional and western wear.`;
-  const description = rawDescription.replace(/<[^>]*>?/gm, '').slice(0, 160).trim();
+  const cleanDesc = rawDescription.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
+  const description = `${cleanDesc.slice(0, 145)}${colorSuffix} Free Delivery across India.`.trim();
   const mainImage = product.images?.[0]?.image_url || 'https://femmeera.com/logo.png';
+  const canonicalUrl = `https://femmeera.com/product/${slug}`;
 
   return {
     title,
     description,
     alternates: {
-      canonical: `https://femmeera.com/product/${slug}`,
+      canonical: canonicalUrl,
     },
     openGraph: {
       title,
       description,
-      url: `https://femmeera.com/product/${slug}`,
+      url: canonicalUrl,
+      siteName: 'Femmeera',
       type: 'website',
       images: [
         {
           url: mainImage,
           width: 800,
           height: 1000,
-          alt: product.name,
+          alt: `${product.name} - Femmeera`,
         },
       ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [mainImage],
     },
   };
 }

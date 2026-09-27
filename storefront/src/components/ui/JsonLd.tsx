@@ -25,19 +25,30 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
   if (type === 'Organization') {
     schema = {
       '@context': 'https://schema.org',
-      '@type': 'Organization',
+      '@type': ['Organization', 'OnlineStore'],
+      '@id': 'https://femmeera.com/#organization',
       name: 'Femmeera',
-      url: 'https://femmeera.com',
+      url: 'https://femmeera.com/',
       logo: 'https://femmeera.com/logo.png',
-      description: "Femmeera is an online fashion store offering a curated collection of women's clothing, including traditional Indian wear (sarees, kurtis, lehengas, suits) and modern western wear (dresses, co-ord sets).",
+      description: 'Femmeera is an online fashion store offering elegant ethnic and contemporary womens wear for every occasion.',
       sameAs: ['https://instagram.com/femmeera'],
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        email: 'support@femmeera.com',
+        url: 'https://femmeera.com/contact',
+      },
     };
   } else if (type === 'WebSite') {
     schema = {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
+      '@id': 'https://femmeera.com/#website',
       name: 'Femmeera',
-      url: 'https://femmeera.com',
+      url: 'https://femmeera.com/',
+      publisher: {
+        '@id': 'https://femmeera.com/#organization',
+      },
     };
   } else if (type === 'FAQPage' && faqs) {
     schema = {
@@ -92,16 +103,15 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
     };
   } else if (type === 'Product' && product) {
     const variants = product.variants || [];
-    const minPrice = product.price || (variants.length > 0 ? Math.min(...variants.map((v) => v.price)) : 1499);
-    
-    // Check if any variant has stock or if product is active
+    const minPrice = Number(product.price || (variants.length > 0 ? Math.min(...variants.map((v) => v.price)) : 1499));
+
     const hasStock = variants.length > 0
       ? variants.some((v) => (v.stock ?? 1) > 0)
       : product.status !== 'INACTIVE';
 
     const imageUrls = product.images && product.images.length > 0
       ? product.images.map((img) => img.image_url).filter(Boolean)
-      : [];
+      : ['https://femmeera.com/logo.png'];
 
     const returnPolicySchema = {
       '@type': 'MerchantReturnPolicy',
@@ -116,7 +126,7 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
       '@type': 'OfferShippingDetails',
       shippingRate: {
         '@type': 'MonetaryAmount',
-        value: minPrice >= 2000 ? 0 : 99,
+        value: 0,
         currency: 'INR',
       },
       shippingDestination: {
@@ -140,42 +150,70 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
       },
     };
 
-    const offerSchema = variants.length > 0
-      ? variants.map((v) => ({
+    const productUrl = `https://femmeera.com/product/${product.slug}`;
+
+    if (variants.length > 0) {
+      const variantSchemas = variants.map((v) => ({
+        '@type': 'Product',
+        name: `${product.name} - ${v.color || 'Standard'} / ${v.size || 'Free Size'}`,
+        sku: v.sku || `${product.sku}-${v.id}`,
+        color: v.color || undefined,
+        size: v.size || undefined,
+        image: imageUrls,
+        offers: {
           '@type': 'Offer',
-          sku: v.sku || `${product.sku}-${v.id}`,
+          url: productUrl,
           priceCurrency: 'INR',
-          price: v.price || minPrice,
-          availability: v.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          url: `https://femmeera.com/product/${product.slug}`,
+          price: Number(v.price || minPrice),
+          availability: (v.stock ?? 1) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          itemCondition: 'https://schema.org/NewCondition',
           hasMerchantReturnPolicy: returnPolicySchema,
           shippingDetails: shippingDetailsSchema,
-        }))
-      : {
+        },
+      }));
+
+      schema = {
+        '@context': 'https://schema.org',
+        '@type': 'ProductGroup',
+        name: product.name,
+        description: product.description || product.short_description || `Buy ${product.name} online at Femmeera.`,
+        productGroupID: product.sku || `FEM-${product.id}`,
+        url: productUrl,
+        brand: {
+          '@type': 'Brand',
+          name: product.brand || 'Femmeera',
+        },
+        variesBy: [
+          'https://schema.org/color',
+          'https://schema.org/size',
+        ],
+        hasVariant: variantSchemas,
+      };
+    } else {
+      schema = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: product.name,
+        image: imageUrls,
+        description: product.description || product.short_description || `Buy ${product.name} online at Femmeera.`,
+        sku: product.sku || `FEM-${product.id}`,
+        brand: {
+          '@type': 'Brand',
+          name: product.brand || 'Femmeera',
+        },
+        offers: {
           '@type': 'Offer',
-          url: `https://femmeera.com/product/${product.slug}`,
+          url: productUrl,
           priceCurrency: 'INR',
           price: minPrice,
           availability: hasStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          itemCondition: 'https://schema.org/NewCondition',
           hasMerchantReturnPolicy: returnPolicySchema,
           shippingDetails: shippingDetailsSchema,
-        };
+        },
+      };
+    }
 
-    schema = {
-      '@context': 'https://schema.org',
-      '@type': 'Product',
-      name: product.name,
-      image: imageUrls.length > 0 ? imageUrls : ['https://femmeera.com/logo.png'],
-      description: product.description || product.short_description || `Buy ${product.name} online at Femmeera.`,
-      sku: product.sku || `FEM-${product.id}`,
-      brand: {
-        '@type': 'Brand',
-        name: product.brand || 'Femmeera',
-      },
-      offers: offerSchema,
-    };
-
-    // Only include AggregateRating if real rating data exists
     if (product.rating && product.rating > 0 && product.review_count) {
       schema.aggregateRating = {
         '@type': 'AggregateRating',
@@ -194,4 +232,3 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
     />
   );
 };
-

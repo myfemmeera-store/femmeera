@@ -11,8 +11,39 @@ import { WatchAndShopSection } from '@/components/home/WatchAndShopSection';
 import { TestimonialsSection } from '@/components/home/TestimonialsSection';
 import { AddToCartButton } from '@/components/ui/AddToCartButton';
 
+import { Metadata } from 'next';
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+export const metadata: Metadata = {
+  title: "Femmeera | Women's Ethnic & Contemporary Fashion",
+  description: "Shop elegant sarees, handcrafted kurtis, lehenga sets, anarkalis, co-ords, and western dresses at Femmeera. Premium quality tailoring with free delivery across India.",
+  alternates: {
+    canonical: 'https://femmeera.com',
+  },
+  openGraph: {
+    title: "Femmeera | Women's Ethnic & Contemporary Fashion",
+    description: "Shop elegant sarees, handcrafted kurtis, lehenga sets, anarkalis, co-ords, and western dresses at Femmeera. Premium quality tailoring with free delivery across India.",
+    url: 'https://femmeera.com',
+    siteName: 'Femmeera',
+    type: 'website',
+    images: [
+      {
+        url: 'https://femmeera.com/logo.png',
+        width: 1200,
+        height: 630,
+        alt: "Femmeera - Women's Ethnic & Contemporary Fashion",
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Femmeera | Women's Ethnic & Contemporary Fashion",
+    description: "Shop elegant sarees, handcrafted kurtis, lehenga sets, anarkalis, co-ords, and western dresses at Femmeera. Free delivery across India.",
+    images: ['https://femmeera.com/logo.png'],
+  },
+};
 
 const defaultNewArrivals = [
   {

@@ -17,20 +17,38 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const categoriesRes = await categoryService.getCategories();
   const cat = categoriesRes.data?.find((c) => c.slug === slug);
 
-  const title = cat?.seo_title || `${cat?.name || 'Women\'s Clothing'} Collection | Femmeera`;
-  const description = cat?.seo_description || `Discover handcrafted ${cat?.name || 'clothing'} for women at Femmeera.`;
+  const catName = cat?.name || slug.replace(/-/g, ' ');
+  const title = cat?.seo_title || `${catName} for Women | Elegant Ethnic & Contemporary Wear | Femmeera`;
+  const description = cat?.seo_description || `Discover handcrafted ${catName} for women at Femmeera. Shop high-quality embroidered outfits, beautiful designs, and comfortable fits with free delivery across India.`;
+  const canonicalUrl = `https://femmeera.com/women/${slug}`;
+  const catImage = cat?.image_url || 'https://femmeera.com/logo.png';
 
   return {
     title,
     description,
     alternates: {
-      canonical: `https://femmeera.com/women/${slug}`,
+      canonical: canonicalUrl,
     },
     openGraph: {
       title,
       description,
-      url: `https://femmeera.com/women/${slug}`,
+      url: canonicalUrl,
+      siteName: 'Femmeera',
       type: 'website',
+      images: [
+        {
+          url: catImage,
+          width: 1200,
+          height: 630,
+          alt: `${catName} Collection - Femmeera`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [catImage],
     },
   };
 }

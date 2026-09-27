@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/account/', '/cart/', '/checkout/', '/search'],
+      disallow: ['/account/', '/cart/', '/checkout/', '/search/', '/admin/', '/api/'],
     },
     sitemap: 'https://femmeera.com/sitemap.xml',
   };
