@@ -52,6 +52,66 @@ export default function EditProductClient() {
 
   const [productImages, setProductImages] = useState<ProductImageItem[]>([]);
 
+  const PRESET_COLORS = [
+    { name: 'Royal Blue', code: '#002366' },
+    { name: 'Ruby Red', code: '#E0115F' },
+    { name: 'Emerald Green', code: '#2E7D32' },
+    { name: 'Mustard Yellow', code: '#FBC02D' },
+    { name: 'Black', code: '#000000' },
+    { name: 'Ivory White', code: '#FFFFFF' },
+    { name: 'Blush Pink', code: '#FF69B4' },
+    { name: 'Gold', code: '#D4AF37' },
+    { name: 'Beige', code: '#E6D7C3' },
+    { name: 'Maroon', code: '#800000' },
+    { name: 'Navy Blue', code: '#000080' },
+    { name: 'Purple', code: '#7B1FA2' },
+  ];
+
+  const [photoViewMode, setPhotoViewMode] = useState<'grouped' | 'all'>('grouped');
+
+  const configuredColors = React.useMemo(() => {
+    const set = new Set<string>();
+    if (product?.variants) {
+      product.variants.forEach((v) => {
+        if (v.color && v.color.trim()) set.add(v.color.trim());
+      });
+    }
+    if (productImages) {
+      productImages.forEach((img: ProductImageItem) => {
+        if (img.color_name && img.color_name.trim()) set.add(img.color_name.trim());
+      });
+    }
+    return Array.from(set);
+  }, [product?.variants, productImages]);
+
+  const handleImageUploadForColor = async (colorName: string | null, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const selectedFiles = Array.from(e.target.files);
+
+    setIsUploadingImage(true);
+    for (const file of selectedFiles) {
+      const localPreviewUrl = URL.createObjectURL(file);
+      setProductImages((prev: ProductImageItem[]) => [...prev, { image_url: localPreviewUrl, color_name: colorName }]);
+
+      try {
+        const res = await mediaService.uploadImage(file, 'products');
+        if (res.success && res.data) {
+          const uploadedUrl = res.data.url;
+          setProductImages((prev: ProductImageItem[]) =>
+            prev.map((img: ProductImageItem) => (img.image_url === localPreviewUrl ? { ...img, image_url: uploadedUrl } : img))
+          );
+        } else {
+          showToast(res.message || 'Image upload failed.', 'error');
+          setProductImages((prev: ProductImageItem[]) => prev.filter((img: ProductImageItem) => img.image_url !== localPreviewUrl));
+        }
+      } catch (err) {
+        showToast('Image upload failed.', 'error');
+        setProductImages((prev: ProductImageItem[]) => prev.filter((img: ProductImageItem) => img.image_url !== localPreviewUrl));
+      }
+    }
+    setIsUploadingImage(false);
+  };
+
   // Variant Generator State
   const [generatorModalOpen, setGeneratorModalOpen] = useState(false);
   const [selectedColorsText, setSelectedColorsText] = useState('Midnight Black, Ivory White');
@@ -417,56 +477,260 @@ export default function EditProductClient() {
 
       {/* 2. Product Gallery Photos */}
       <Card title="2. Product Gallery Photos & Color Links">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-neutral-500">
-              Upload photos and link them to colors (e.g. Ivory White, Midnight Black). The first image will be primary.
-            </p>
-            <label className="inline-flex items-center space-x-2 px-3 py-2 bg-neutral-900 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-neutral-800 transition-colors">
-              <Upload className="w-3.5 h-3.5" />
-              <span>{isUploadingImage ? 'Uploading...' : 'Upload Photos'}</span>
-              <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isUploadingImage} />
-            </label>
+        <div className="space-y-5">
+          {/* Header Bar with View Switcher & Global Upload */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-100 pb-3">
+            <div>
+              <p className="text-xs font-bold text-neutral-800">Organize Photos by Color Sections</p>
+              <p className="text-[11px] text-neutral-500">Assign photos to colors so storefront shows exact images when a customer switches colors</p>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <div className="bg-neutral-100 p-1 rounded-xl flex items-center space-x-1 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setPhotoViewMode('grouped')}
+                  className={`px-3 py-1 rounded-lg transition-colors ${
+                    photoViewMode === 'grouped' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-500 hover:text-neutral-900'
+                  }`}
+                >
+                  Grouped by Color
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPhotoViewMode('all')}
+                  className={`px-3 py-1 rounded-lg transition-colors ${
+                    photoViewMode === 'all' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-500 hover:text-neutral-900'
+                  }`}
+                >
+                  All Photos Grid ({productImages.length})
+                </button>
+              </div>
+
+              <label className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-neutral-900 text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-neutral-800 transition-colors">
+                <Upload className="w-3.5 h-3.5" />
+                <span>{isUploadingImage ? 'Uploading...' : 'Upload General Photos'}</span>
+                <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isUploadingImage} />
+              </label>
+            </div>
           </div>
 
-          {productImages.length === 0 ? (
-            <div className="p-8 border-2 border-dashed border-neutral-200 rounded-xl text-center">
-              <ImagePlus className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
-              <p className="text-xs font-bold text-neutral-600">No images uploaded yet</p>
-              <p className="text-[11px] text-neutral-400">Click upload photos to attach images to this product.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {productImages.map((img, idx) => (
-                <div key={idx} className="relative group border border-neutral-200 rounded-xl p-2 bg-neutral-50 space-y-2">
-                  <div className="relative h-40 w-full rounded-lg overflow-hidden bg-white">
-                    <Image src={img.image_url} alt={`Product Image ${idx + 1}`} fill className="object-cover" />
-                    {idx === 0 && (
-                      <span className="absolute top-2 left-2 bg-black text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
-                        PRIMARY
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeImage(idx)}
-                      className="absolute top-2 right-2 p-1 bg-rose-600 text-white rounded-md opacity-90 hover:opacity-100 transition-opacity"
+          {/* Quick Color Badges Toolbar */}
+          {configuredColors.length > 0 && (
+            <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 space-y-2">
+              <span className="text-[11px] font-bold text-neutral-600 block uppercase">Product Colors Available:</span>
+              <div className="flex flex-wrap gap-2">
+                {configuredColors.map((colorName) => {
+                  const matchingPreset = PRESET_COLORS.find((p) => p.name.toLowerCase() === colorName.toLowerCase());
+                  const photoCount = productImages.filter((img) => img.color_name?.trim().toLowerCase() === colorName.toLowerCase()).length;
+                  return (
+                    <span
+                      key={colorName}
+                      className="px-2.5 py-1 bg-white border border-neutral-300 rounded-lg text-xs font-bold text-neutral-800 flex items-center space-x-1.5 shadow-2xs"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                      <span className="w-3 h-3 rounded-full border border-black/20" style={{ backgroundColor: matchingPreset?.code || '#B38548' }} />
+                      <span>{colorName}</span>
+                      <span className="bg-neutral-100 text-neutral-600 px-1.5 py-0.2 rounded text-[10px]">{photoCount} photos</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-                  <div>
-                    <label className="text-[10px] font-bold text-neutral-400 block uppercase">Link to Color Name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Midnight Black"
-                      value={img.color_name || ''}
-                      onChange={(e) => setImageColor(idx, e.target.value)}
-                      className="w-full text-xs font-bold px-2 py-1 border border-neutral-200 rounded bg-white"
-                    />
-                  </div>
+          {/* VIEW MODE 1: GROUPED BY COLOR SECTION */}
+          {photoViewMode === 'grouped' && (
+            <div className="space-y-6">
+              {configuredColors.length === 0 && (
+                <div className="p-6 border border-amber-200 bg-amber-50 rounded-xl text-xs text-amber-900 space-y-2">
+                  <p className="font-bold">💡 No color variants detected yet.</p>
+                  <p>You can generate variants in Step 3 below or assign custom color names directly to uploaded photos.</p>
                 </div>
-              ))}
+              )}
+
+              {/* Render Cards for Each Configured Color */}
+              {configuredColors.map((colorName) => {
+                const colorImages = productImages.filter((img) => img.color_name?.trim().toLowerCase() === colorName.toLowerCase());
+                const matchingPreset = PRESET_COLORS.find((p) => p.name.toLowerCase() === colorName.toLowerCase());
+
+                return (
+                  <div key={colorName} className="p-4 bg-white rounded-2xl border-2 border-[#EFE6D8] space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="w-4 h-4 rounded-full border border-black/20 shadow-xs" style={{ backgroundColor: matchingPreset?.code || '#B38548' }} />
+                        <span className="font-bold text-sm text-neutral-900">{colorName} Section</span>
+                        <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-full font-bold">
+                          {colorImages.length} {colorImages.length === 1 ? 'photo' : 'photos'}
+                        </span>
+                      </div>
+
+                      <label className="inline-flex items-center space-x-1.5 px-3 py-1 bg-[#FAF6F0] text-[#B38548] border border-[#B38548]/40 hover:border-[#B38548] rounded-lg text-xs font-bold cursor-pointer transition-colors">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>+ Upload {colorName} Photos</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageUploadForColor(colorName, e)}
+                          disabled={isUploadingImage}
+                        />
+                      </label>
+                    </div>
+
+                    {colorImages.length === 0 ? (
+                      <div className="p-4 border border-dashed border-neutral-200 rounded-xl text-center bg-neutral-50/50">
+                        <p className="text-xs text-neutral-400 font-medium">No photos attached to <span className="font-bold text-neutral-700">{colorName}</span> yet.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                        {colorImages.map((img) => {
+                          const globalIndex = productImages.findIndex((p) => p.image_url === img.image_url);
+                          return (
+                            <div key={globalIndex} className="relative group border border-neutral-200 rounded-xl p-1.5 bg-neutral-50 space-y-1">
+                              <div className="relative aspect-3/4 w-full rounded-lg overflow-hidden bg-white">
+                                <Image src={img.image_url} alt={`${colorName} product photo`} fill className="object-cover" />
+                                {globalIndex === 0 && (
+                                  <span className="absolute top-1.5 left-1.5 bg-black text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                                    PRIMARY
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(globalIndex)}
+                                  className="absolute top-1.5 right-1.5 p-1 bg-rose-600 text-white rounded-md opacity-90 hover:opacity-100 transition-opacity"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Card for Untagged / General Photos */}
+              {(() => {
+                const untaggedImages = productImages.filter((img) => !img.color_name || !img.color_name.trim());
+                return (
+                  <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-3">
+                    <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-xs text-neutral-700">General / Untagged Photos</span>
+                        <span className="text-xs bg-white text-neutral-600 px-2 py-0.5 rounded-full font-bold border border-neutral-200">
+                          {untaggedImages.length}
+                        </span>
+                      </div>
+                    </div>
+
+                    {untaggedImages.length === 0 ? (
+                      <p className="text-xs text-neutral-400 italic">All photos are assigned to specific color sections.</p>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                        {untaggedImages.map((img) => {
+                          const globalIndex = productImages.findIndex((p) => p.image_url === img.image_url);
+                          return (
+                            <div key={globalIndex} className="relative group border border-neutral-200 rounded-xl p-1.5 bg-white space-y-1">
+                              <div className="relative aspect-3/4 w-full rounded-lg overflow-hidden bg-neutral-100">
+                                <Image src={img.image_url} alt="General product photo" fill className="object-cover" />
+                                {globalIndex === 0 && (
+                                  <span className="absolute top-1.5 left-1.5 bg-black text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                                    PRIMARY
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(globalIndex)}
+                                  className="absolute top-1.5 right-1.5 p-1 bg-rose-600 text-white rounded-md opacity-90 hover:opacity-100 transition-opacity"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+
+                              <div>
+                                <label className="text-[9px] font-bold text-neutral-400 block uppercase">Assign Color:</label>
+                                <select
+                                  value={img.color_name || ''}
+                                  onChange={(e) => setImageColor(globalIndex, e.target.value)}
+                                  className="w-full text-[11px] font-bold px-1.5 py-1 border border-neutral-200 rounded bg-neutral-50"
+                                >
+                                  <option value="">-- Unassigned --</option>
+                                  {configuredColors.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* VIEW MODE 2: ALL PHOTOS GRID */}
+          {photoViewMode === 'all' && (
+            <div>
+              {productImages.length === 0 ? (
+                <div className="p-8 border-2 border-dashed border-neutral-200 rounded-xl text-center">
+                  <ImagePlus className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
+                  <p className="text-xs font-bold text-neutral-600">No images uploaded yet</p>
+                  <p className="text-[11px] text-neutral-400">Click upload photos to attach images to this product.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {productImages.map((img, idx) => (
+                    <div key={idx} className="relative group border border-neutral-200 rounded-xl p-2 bg-neutral-50 space-y-2">
+                      <div className="relative h-44 w-full rounded-lg overflow-hidden bg-white">
+                        <Image src={img.image_url} alt={`Product Image ${idx + 1}`} fill className="object-cover" />
+                        {idx === 0 && (
+                          <span className="absolute top-2 left-2 bg-black text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
+                            PRIMARY
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeImage(idx)}
+                          className="absolute top-2 right-2 p-1 bg-rose-600 text-white rounded-md opacity-90 hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-neutral-400 block uppercase">Link to Color Name</label>
+                        <select
+                          value={img.color_name || ''}
+                          onChange={(e) => setImageColor(idx, e.target.value)}
+                          className="w-full text-xs font-bold px-2 py-1 border border-neutral-200 rounded bg-white mb-1"
+                        >
+                          <option value="">-- Select Color Section --</option>
+                          {configuredColors.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                          {PRESET_COLORS.filter((p) => !configuredColors.includes(p.name)).map((p) => (
+                            <option key={p.name} value={p.name}>{p.name}</option>
+                          ))}
+                        </select>
+
+                        <input
+                          type="text"
+                          placeholder="Or type custom color..."
+                          value={img.color_name || ''}
+                          onChange={(e) => setImageColor(idx, e.target.value)}
+                          className="w-full text-xs font-bold px-2 py-1 border border-neutral-200 rounded bg-white"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

@@ -189,7 +189,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       return [];
     }
     const cleanSelected = (selectedColor || '').trim().toLowerCase();
+    if (!cleanSelected) {
+      return product.images.map((img) => img.image_url);
+    }
 
+    // 1. Direct tag matches (case-insensitive, trimmed)
     const colorSectionMatches = product.images.filter((img) => 
       img.color_name && img.color_name.trim().toLowerCase() === cleanSelected
     );
@@ -197,6 +201,17 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       return colorSectionMatches.map((img) => img.image_url);
     }
 
+    // 2. Loose tag match (e.g. "Royal Blue" matches "blue" or "mustard yellow" matches "mustard")
+    const looseMatches = product.images.filter((img) => {
+      if (!img.color_name) return false;
+      const tag = img.color_name.trim().toLowerCase();
+      return tag.includes(cleanSelected) || cleanSelected.includes(tag);
+    });
+    if (looseMatches.length > 0) {
+      return looseMatches.map((img) => img.image_url);
+    }
+
+    // 3. URL string matches
     const urlMatches = product.images.filter((img) => 
       img.image_url && img.image_url.toLowerCase().includes(cleanSelected)
     );
@@ -204,47 +219,24 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       return urlMatches.map((img) => img.image_url);
     }
 
-    const hasAnyTagged = product.images.some((img) => Boolean(img.color_name && img.color_name.trim()));
-    const allVariantColors = Array.from(new Set(product.variants?.map((v) => v.color?.trim()).filter(Boolean) || []));
-
-    if (!hasAnyTagged && allVariantColors.length > 0 && product.images.length > 0) {
-      const colorIndex = allVariantColors.findIndex((c) => c.toLowerCase() === cleanSelected);
-      if (colorIndex !== -1) {
-        const totalImages = product.images.length;
-        const totalColors = allVariantColors.length;
-        const itemsPerColor = Math.max(1, Math.floor(totalImages / totalColors));
-        const startIndex = Math.min(colorIndex * itemsPerColor, totalImages - 1);
-        const endIndex = colorIndex === totalColors - 1 ? totalImages : Math.min(startIndex + itemsPerColor, totalImages);
-
-        const sliced = product.images.slice(startIndex, endIndex);
-        if (sliced.length > 0) {
-          return sliced.map((img) => img.image_url);
-        }
-      }
-    }
-
-    const activeColorCard = colorOptions.find((c) => c.name.trim().toLowerCase() === cleanSelected);
-    if (activeColorCard?.image) {
-      return [activeColorCard.image];
-    }
-
+    // 4. Untagged images (images with no color assigned are visible across all colors)
     const untaggedImages = product.images.filter((img) => !img.color_name || !img.color_name.trim());
     if (untaggedImages.length > 0) {
       return untaggedImages.map((img) => img.image_url);
     }
 
-    return [product.images[0].image_url];
-  }, [product?.images, product?.variants, selectedColor, colorOptions]);
+    // 5. Fallback: return all images
+    return product.images.map((img) => img.image_url);
+  }, [product?.images, selectedColor]);
 
   const displayImages = React.useMemo(() => {
     if (!product?.images || product.images.length === 0) return [];
 
-    const matchedUrls = colorSpecificImages;
-    const remainingUrls = product.images
-      .map((img) => img.image_url)
-      .filter((url) => !matchedUrls.includes(url));
+    if (colorSpecificImages.length > 0) {
+      return colorSpecificImages;
+    }
 
-    return [...matchedUrls, ...remainingUrls];
+    return product.images.map((img) => img.image_url);
   }, [product?.images, colorSpecificImages]);
 
   useEffect(() => {
