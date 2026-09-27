@@ -1,0 +1,31 @@
+# Femmeera
+
+> Femmeera is an e-commerce fashion brand offering a curated collection of women's clothing, specializing in traditional Indian ethnic wear and contemporary western apparel.
+
+## Brand Information
+- **Official Website**: https://femmeera.com
+- **Brand Focus**: Women's Traditional & Western Apparel
+- **Primary Market**: India (Express Delivery & Cash on Delivery Available)
+
+## Main Product Categories
+- **Traditional Wear**: Sarees, Kurtis, Lehengas, Anarkali Suits, Ethnic Sets
+- **Western Wear**: Western Dresses, Co-ord Sets, Tops, Partywear
+
+## Important Brand & Customer Service Pages
+- **About Us**: https://femmeera.com/about
+- **Customer Contact**: https://femmeera.com/contact
+- **Frequently Asked Questions (FAQ)**: https://femmeera.com/faq
+- **Shipping Policy**: https://femmeera.com/shipping-policy
+- **Return & Exchange Policy**: https://femmeera.com/return-policy
+- **Style Journal & Guides**: https://femmeera.com/journal
+- **Privacy Policy**: https://femmeera.com/privacy
+- **Terms & Conditions**: https://femmeera.com/terms
+
+## Machine-Readable Discovery & Feeds
+- **Sitemap Index**: https://femmeera.com/sitemap.xml
+- **Google Merchant Product Feed (XML)**: https://femmeera.com/api/v1/feeds/google-merchant
+- **Google Merchant Product Feed (JSON)**: https://femmeera.com/api/v1/feeds/google-merchant?format=json
+- **Robots Directives**: https://femmeera.com/robots.txt
+
+---
+*Note: This file provides public, factual metadata about Femmeera to assist web crawlers, search engines, and automated commerce tools in accurately understanding the brand catalog and policies.*

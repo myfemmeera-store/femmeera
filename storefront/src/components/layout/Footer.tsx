@@ -204,7 +204,7 @@ export const Footer: React.FC = () => {
           </h4>
           <ul className="space-y-2 text-neutral-600 text-[11px]">
             <li><Link href="/about" className="hover:text-[#B38548] transition-colors">About Us</Link></li>
-            <li><Link href="/about" className="hover:text-[#B38548] transition-colors">Our Story</Link></li>
+            <li><Link href="/journal" className="hover:text-[#B38548] transition-colors">Style Journal</Link></li>
             <li><Link href="/privacy" className="hover:text-[#B38548] transition-colors">Privacy Policy</Link></li>
             <li><Link href="/terms" className="hover:text-[#B38548] transition-colors">Terms & Conditions</Link></li>
           </ul>

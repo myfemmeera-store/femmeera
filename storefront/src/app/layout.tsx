@@ -23,11 +23,22 @@ export const metadata: Metadata = {
   title: 'Femmeera | Premium Women\'s Traditional & Western Wear',
   description: 'Shop elegant sarees, kurtis, ethnic sets, western dresses, and tops online at Femmeera.',
   metadataBase: new URL('https://femmeera.com'),
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     title: 'Femmeera | Premium Women\'s Clothing Store',
     description: 'Discover handcrafted traditional sarees & chic western trends.',
     type: 'website',
     url: 'https://femmeera.com',
+    images: [
+      {
+        url: 'https://femmeera.com/logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'Femmeera - Premium Women\'s Traditional & Western Wear',
+      },
+    ],
   },
 };
 
@@ -41,6 +52,7 @@ export default function RootLayout({
       <body className="flex flex-col min-h-screen bg-[#FDFBF7] text-neutral-900 antialiased selection:bg-[#B38548] selection:text-white font-sans">
         <VisitorTracker />
         <JsonLd type="Organization" />
+        <JsonLd type="WebSite" />
         <Header />
         <main className="flex-1 pb-16 sm:pb-0">{children}</main>
         <Footer />

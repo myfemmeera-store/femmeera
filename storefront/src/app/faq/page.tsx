@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft, HelpCircle, ShoppingBag, CreditCard, Truck, RotateCcw, Mail, Search } from 'lucide-react';
+import { JsonLd } from '@/components/ui/JsonLd';
 
 export const metadata: Metadata = {
   title: "Frequently Asked Questions | Femmeera",
   description: "Find answers to common questions about Femmeera women's traditional and western clothing, orders, payments, shipping, returns, refunds and more.",
+  alternates: {
+    canonical: 'https://femmeera.com/faq',
+  },
 };
 
 const faqs = [

@@ -8,6 +8,9 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Women\'s Fashion Collection | Femmeera',
   description: 'Shop handcrafted traditional sarees, kurtis, western dresses and tops for women.',
+  alternates: {
+    canonical: 'https://femmeera.com/women',
+  },
 };
 
 export default async function WomenPage() {

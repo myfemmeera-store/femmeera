@@ -67,7 +67,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {product.images && product.images.length > 0 ? (
             <img
               src={product.images[0].image_url}
-              alt={product.name}
+              alt={`${product.name} - ${product.category?.name || 'Women\'s Apparel'} by ${product.brand || 'Femmeera'}`}
               className="w-full h-full object-cover"
             />
           ) : (

@@ -13,7 +13,27 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error('Admin Portal Error Boundary caught:', error);
+
+    const isChunkError =
+      error?.name === 'ChunkLoadError' ||
+      error?.message?.includes('Loading chunk') ||
+      error?.message?.includes('ChunkLoadError');
+
+    if (isChunkError) {
+      const lastReload = sessionStorage.getItem('chunk_error_reload');
+      const now = Date.now();
+      // Auto-reload once if a stale JS chunk error occurred after a server build update
+      if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+        sessionStorage.setItem('chunk_error_reload', now.toString());
+        window.location.reload();
+      }
+    }
   }, [error]);
+
+  const isChunkError =
+    error?.name === 'ChunkLoadError' ||
+    error?.message?.includes('Loading chunk') ||
+    error?.message?.includes('ChunkLoadError');
 
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
@@ -37,7 +57,13 @@ export default function Error({
           </Button>
           <Button
             variant="outline"
-            onClick={() => reset()}
+            onClick={() => {
+              if (isChunkError) {
+                window.location.reload();
+              } else {
+                reset();
+              }
+            }}
             size="sm"
           >
             Try Again
@@ -47,3 +73,4 @@ export default function Error({
     </div>
   );
 }
+

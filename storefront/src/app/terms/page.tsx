@@ -5,6 +5,9 @@ import { ChevronLeft } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'Terms & Conditions | Femmeera',
   description: "Read Femmeera's terms and conditions covering online shopping, products, orders, payments, shipping, returns and website usage.",
+  alternates: {
+    canonical: 'https://femmeera.com/terms',
+  },
 };
 
 const termsSections = [

@@ -5,6 +5,9 @@ import { ChevronLeft, ShieldCheck, Lock, FileText, CheckCircle2 } from 'lucide-r
 export const metadata: Metadata = {
   title: 'Privacy Policy | Femmeera',
   description: "Read Femmeera's privacy policy regarding how we collect, use, protect and handle customer personal data and order details.",
+  alternates: {
+    canonical: 'https://femmeera.com/privacy',
+  },
 };
 
 export default function PrivacyPolicyPage() {

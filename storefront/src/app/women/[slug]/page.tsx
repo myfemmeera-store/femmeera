@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { productService } from '@/services/productService';
 import { categoryService } from '@/services/categoryService';
 import { ProductGrid } from '@/components/ui/ProductGrid';
@@ -22,10 +23,14 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   return {
     title,
     description,
+    alternates: {
+      canonical: `https://femmeera.com/women/${slug}`,
+    },
     openGraph: {
       title,
       description,
       url: `https://femmeera.com/women/${slug}`,
+      type: 'website',
     },
   };
 }
@@ -89,6 +94,40 @@ export default async function CategoryListingPage({ params, searchParams }: Cate
 
       {/* Product Grid */}
       <ProductGrid products={products} />
+
+      {/* Category SEO Copy & Related Categories Internal Links */}
+      <div className="border-t border-neutral-200/80 pt-10 mt-12 space-y-8 text-xs text-neutral-600 leading-relaxed">
+        <div className="bg-[#FAF4EB] p-6 sm:p-8 rounded-3xl border border-[#EFE6D8] space-y-3">
+          <h2 className="font-serif text-lg sm:text-xl font-bold text-neutral-900">
+            About Femmeera {cat?.name || slug.replace(/-/g, ' ')} Collection
+          </h2>
+          <p className="text-neutral-700">
+            {cat?.description || `Explore our curated selection of ${cat?.name || slug.replace(/-/g, ' ')} designed for women who appreciate quality tailoring, comfortable fits, and elegant aesthetics. Whether you are dressing for daily wear, office hours, festive celebrations, or evening events, Femmeera offers versatile designs crafted from premium fabrics.`}
+          </p>
+        </div>
+
+        {/* Related Categories Navigation */}
+        <div className="space-y-3">
+          <h3 className="font-serif text-sm font-bold text-neutral-900 uppercase tracking-wider">
+            Explore Other Collections
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {(categoriesRes.data || []).map((otherCat) => (
+              <Link
+                key={otherCat.id}
+                href={`/women/${otherCat.slug}`}
+                className={`px-3 py-1.5 rounded-xl border text-xs transition-colors ${
+                  otherCat.slug === slug
+                    ? 'bg-neutral-900 text-white border-neutral-900 font-bold'
+                    : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400 hover:text-neutral-900'
+                }`}
+              >
+                {otherCat.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

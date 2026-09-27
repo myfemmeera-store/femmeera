@@ -6,6 +6,9 @@ import { ChevronLeft, Sparkles, Heart, ShieldCheck, Truck, Award, CheckCircle2 }
 export const metadata: Metadata = {
   title: "About Femmeera | Women's Traditional & Western Fashion",
   description: "Learn about Femmeera, an online women's fashion brand offering traditional Indian wear and modern western clothing.",
+  alternates: {
+    canonical: 'https://femmeera.com/about',
+  },
 };
 
 export default function AboutPage() {

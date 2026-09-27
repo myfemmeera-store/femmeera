@@ -5,6 +5,9 @@ import { ChevronLeft, Mail, Globe, HeadphoneOff, MessageSquare, Package, Truck, 
 export const metadata: Metadata = {
   title: 'Contact Femmeera | Customer Support',
   description: "Contact Femmeera for help with orders, products, shipping, returns, payments and other customer enquiries.",
+  alternates: {
+    canonical: 'https://femmeera.com/contact',
+  },
 };
 
 export default function ContactPage() {

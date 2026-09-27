@@ -33,7 +33,7 @@ export const authService = {
     } finally {
       localStorage.removeItem('femmeera_admin_token');
       localStorage.removeItem('femmeera_admin_user');
-      window.location.href = '/login';
+      window.location.replace('/login');
     }
   },
 
