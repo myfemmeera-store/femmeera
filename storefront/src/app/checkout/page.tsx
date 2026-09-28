@@ -81,7 +81,7 @@ export default function CheckoutPage() {
         const [cartRes, addrRes, shipRes] = await Promise.all([
           cartService.getCart(),
           addressService.getAddresses().catch(() => ({ success: false, data: [] })),
-          shippingService.getMethods().catch(() => ({ success: false, data: { methods: [], free_shipping_threshold: 1499 } })),
+          shippingService.getMethods().catch(() => ({ success: false, data: { methods: [], free_shipping_threshold: 0 } })),
         ]);
 
         if (cartRes.success && cartRes.data) {
@@ -532,7 +532,7 @@ export default function CheckoutPage() {
                       <input type="radio" name="delivery" checked={selectedMethodId === 1} onChange={() => setSelectedMethodId(1)} className="text-[#B38548]" />
                       <div>
                         <span className="font-bold text-neutral-900 block">Standard Delivery</span>
-                        <span className="text-[11px] text-neutral-500">24 - 26 May • Free</span>
+                        <span className="text-[11px] font-semibold text-emerald-700">3–5 Days • FREE Delivery</span>
                       </div>
                     </div>
                     <Truck className="w-5 h-5 text-[#B38548]" />
@@ -545,7 +545,7 @@ export default function CheckoutPage() {
                       <input type="radio" name="delivery" checked={selectedMethodId === 2} onChange={() => setSelectedMethodId(2)} className="text-[#B38548]" />
                       <div>
                         <span className="font-bold text-neutral-900 block">Express Delivery</span>
-                        <span className="text-[11px] text-neutral-500">21 - 22 May • ₹99</span>
+                        <span className="text-[11px] font-semibold text-emerald-700">Priority 1–2 Days • FREE Delivery</span>
                       </div>
                     </div>
                     <Truck className="w-5 h-5 text-[#B38548]" />
@@ -699,10 +699,10 @@ export default function CheckoutPage() {
                   </div>
                 ) : null}
 
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span>Shipping</span>
-                  <span className="font-bold text-emerald-600">
-                    {cart?.shipping?.is_free_shipping || cart?.shipping?.amount === 0 ? 'FREE' : `₹${cart?.shipping?.amount || 0}`}
+                  <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[11px]">
+                    FREE Delivery
                   </span>
                 </div>
 

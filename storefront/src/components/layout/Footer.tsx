@@ -16,12 +16,12 @@ export const Footer: React.FC = () => {
   const [storeEmail, setStoreEmail] = useState('hello@femmeera.com');
   const [storeAddress, setStoreAddress] = useState('Bangalore, India');
   const [socials, setSocials] = useState({
-    instagram: 'https://instagram.com',
-    facebook: 'https://facebook.com',
+    instagram: 'https://www.instagram.com/femmeera.co/',
+    facebook: 'https://www.facebook.com/profile.php?id=61595048331512',
     whatsapp: '',
-    youtube: '',
-    pinterest: '',
-    twitter: '',
+    youtube: 'https://www.youtube.com/@Femmeera_co',
+    pinterest: 'https://in.pinterest.com/femmeera_co/',
+    twitter: 'https://x.com/femmeera_co',
   });
 
   useEffect(() => {
@@ -32,12 +32,12 @@ export const Footer: React.FC = () => {
         if (res.data.store_email) setStoreEmail(res.data.store_email);
         if (res.data.store_address) setStoreAddress(res.data.store_address);
         setSocials({
-          instagram: res.data.social_instagram || 'https://instagram.com',
-          facebook: res.data.social_facebook || 'https://facebook.com',
+          instagram: res.data.social_instagram || 'https://www.instagram.com/femmeera.co/',
+          facebook: res.data.social_facebook || 'https://www.facebook.com/profile.php?id=61595048331512',
           whatsapp: res.data.social_whatsapp || '',
-          youtube: res.data.social_youtube || '',
-          pinterest: res.data.social_pinterest || '',
-          twitter: res.data.social_twitter || '',
+          youtube: res.data.social_youtube || 'https://www.youtube.com/@Femmeera_co',
+          pinterest: res.data.social_pinterest || 'https://in.pinterest.com/femmeera_co/',
+          twitter: res.data.social_twitter || 'https://x.com/femmeera_co',
         });
       }
     });

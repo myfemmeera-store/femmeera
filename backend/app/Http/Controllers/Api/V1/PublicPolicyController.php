@@ -24,8 +24,8 @@ class PublicPolicyController extends Controller
                 'policy' => $policy ?: [
                     'title' => 'Femmeera Shipping & Delivery Policy',
                     'dispatch_time' => '24 - 48 Hours',
-                    'free_shipping_threshold' => 2000,
-                    'content' => 'We deliver across India with reliable courier partners. Orders above ₹2,000 qualify for FREE Express Shipping.',
+                    'free_shipping_threshold' => 0,
+                    'content' => 'We deliver across India with reliable courier partners. All orders qualify for 100% FREE Delivery nationwide with no minimum order threshold.',
                 ],
                 'rules' => $rules,
             ],

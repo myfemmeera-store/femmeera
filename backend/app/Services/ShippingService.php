@@ -47,8 +47,7 @@ class ShippingService
      */
     public function getFreeShippingThreshold(): float
     {
-        $val = DB::table('settings')->where('key_name', 'free_shipping_threshold')->value('value_content');
-        return $val ? (float) $val : 999.00;
+        return 0.00;
     }
 
     /**
@@ -56,7 +55,7 @@ class ShippingService
      */
     public function calculateShipping(?int $methodId, float $subtotal): array
     {
-        $threshold = $this->getFreeShippingThreshold();
+        $threshold = 0.00;
         
         // 1. Query active shipping rules in DB matching subtotal range
         $matchingRule = DB::table('shipping_rules')
@@ -70,12 +69,9 @@ class ShippingService
             ->first();
 
         if ($matchingRule) {
-            $shippingPrice = (float) $matchingRule->shipping_fee;
             $name = $matchingRule->name;
             $days = $matchingRule->estimated_days;
-            $isFreeShipping = ($shippingPrice === 0.0);
         } else {
-            $isFreeShipping = $subtotal >= $threshold;
             if (!$methodId) {
                 $defaultMethod = ShippingMethod::where('status', 'ACTIVE')->orderBy('price', 'asc')->first();
                 $methodId = $defaultMethod ? $defaultMethod->id : null;
@@ -83,25 +79,25 @@ class ShippingService
 
             $method = ShippingMethod::find($methodId);
             if (!$method) {
-                $basePrice = 49.00;
-                $name = 'Standard Delivery';
+                $name = 'Free Delivery';
                 $days = '3–5 working days';
             } else {
-                $basePrice = (float) $method->price;
                 $name = $method->name;
                 $days = "{$method->estimated_min_days}–{$method->estimated_max_days} working days";
             }
-            $shippingPrice = $isFreeShipping ? 0.00 : $basePrice;
         }
+
+        $shippingPrice = 0.00;
+        $isFreeShipping = true;
 
         return [
             'method_id' => $matchingRule ? $matchingRule->id : $methodId,
             'method_name' => $name,
             'estimated_days' => $days,
-            'amount' => $shippingPrice,
-            'is_free_shipping' => $isFreeShipping,
-            'free_shipping_threshold' => $threshold,
-            'amount_needed_for_free_shipping' => max(0.00, $threshold - $subtotal),
+            'amount' => 0.00,
+            'is_free_shipping' => true,
+            'free_shipping_threshold' => 0.00,
+            'amount_needed_for_free_shipping' => 0.00,
         ];
     }
 }

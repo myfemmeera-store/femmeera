@@ -305,9 +305,15 @@ export default function OrderDetailsClient() {
                 <span>Discount</span>
                 <span>-₹{order.discount_amount.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span>Shipping Fee</span>
-                <span>{order.shipping_amount > 0 ? `₹${order.shipping_amount}` : 'FREE'}</span>
+                <span>
+                  {order.shipping_amount > 0 ? (
+                    `₹${order.shipping_amount}`
+                  ) : (
+                    <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px] font-black">FREE Delivery</span>
+                  )}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>GST Tax (5%)</span>

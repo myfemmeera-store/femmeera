@@ -97,9 +97,9 @@ export default function CartPage() {
     );
   }
 
-  const freeShippingThreshold = cart?.shipping.free_shipping_threshold || 999;
-  const amountNeeded = cart?.shipping.amount_needed_for_free_shipping || 0;
-  const freeShippingProgress = Math.min(100, Math.round(((cart?.subtotal || 0) / freeShippingThreshold) * 100));
+  const freeShippingThreshold = cart?.shipping.free_shipping_threshold ?? 0;
+  const amountNeeded = cart?.shipping.amount_needed_for_free_shipping ?? 0;
+  const freeShippingProgress = freeShippingThreshold === 0 ? 100 : Math.min(100, Math.round(((cart?.subtotal || 0) / freeShippingThreshold) * 100));
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -135,22 +135,18 @@ export default function CartPage() {
 
         {/* Free Shipping Banner */}
         {cart && cart.items.length > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/80 rounded-2xl p-4 shadow-xs">
+          <div className="mb-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200/80 rounded-2xl p-4 shadow-xs">
             <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
-                <Truck className="w-4 h-4 text-amber-700" />
-                {amountNeeded > 0 ? (
-                  <span>Add <strong>₹{amountNeeded.toFixed(0)}</strong> more to get <strong>FREE SHIPPING!</strong></span>
-                ) : (
-                  <span className="text-emerald-700">🎉 Congratulations! You unlocked FREE Delivery!</span>
-                )}
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
+                <Truck className="w-4 h-4 text-emerald-700" />
+                <span className="text-emerald-700">🎉 Congratulations! You unlocked 100% FREE Delivery on all orders!</span>
               </div>
-              <span className="text-[11px] font-semibold text-amber-800">{freeShippingProgress}%</span>
+              <span className="text-[11px] font-semibold text-emerald-800">100%</span>
             </div>
-            <div className="w-full bg-amber-200/70 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-emerald-200/70 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-amber-600 h-full transition-all duration-500 rounded-full"
-                style={{ width: `${freeShippingProgress}%` }}
+                className="bg-emerald-600 h-full transition-all duration-500 rounded-full"
+                style={{ width: `100%` }}
               />
             </div>
           </div>
@@ -371,8 +367,8 @@ export default function CartPage() {
                   <div className="flex justify-between">
                     <span>Shipping Fee</span>
                     <span>
-                      {cart.shipping.is_free_shipping ? (
-                        <strong className="text-emerald-600 font-bold">FREE</strong>
+                      {cart.shipping.is_free_shipping || cart.shipping.amount === 0 ? (
+                        <strong className="text-emerald-600 font-bold">FREE Delivery</strong>
                       ) : (
                         `₹${cart.shipping.amount}`
                       )}

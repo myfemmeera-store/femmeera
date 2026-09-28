@@ -26,16 +26,16 @@ export default function ShippingManagementPage() {
   const [policyForm, setPolicyForm] = useState({
     title: 'Femmeera Shipping & Delivery Policy',
     dispatch_time: '24 - 48 Hours',
-    free_shipping_threshold: 2000,
-    content: '',
+    free_shipping_threshold: 0,
+    content: 'We offer 100% FREE Delivery on all orders nationwide with no minimum order requirements.',
   });
 
   const [newRule, setNewRule] = useState<ShippingRule>({
-    name: '',
+    name: 'Free Delivery Tier',
     min_order_amount: 0,
-    max_order_amount: 999,
-    shipping_fee: 99,
-    estimated_days: '3-7 working days',
+    max_order_amount: null,
+    shipping_fee: 0,
+    estimated_days: '3-5 working days',
     status: 'ACTIVE',
   });
 
@@ -53,8 +53,8 @@ export default function ShippingManagementPage() {
           setPolicyForm({
             title: json.data.policy.title || 'Femmeera Shipping & Delivery Policy',
             dispatch_time: json.data.policy.dispatch_time || '24 - 48 Hours',
-            free_shipping_threshold: json.data.policy.free_shipping_threshold || 2000,
-            content: json.data.policy.content || '',
+            free_shipping_threshold: json.data.policy.free_shipping_threshold ?? 0,
+            content: json.data.policy.content || 'We offer 100% FREE Delivery on all orders nationwide with no minimum order requirements.',
           });
         }
       }
@@ -163,6 +163,24 @@ export default function ShippingManagementPage() {
             <span>Shipping Rate Calculator ↗</span>
           </button>
         </Link>
+      </div>
+
+      {/* Storewide Free Delivery Info Banner */}
+      <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+            <Truck className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-xs font-bold text-emerald-950 flex items-center gap-2">
+              <span>Storewide Free Delivery Active</span>
+              <span className="px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider">Enabled</span>
+            </h3>
+            <p className="text-[11px] text-emerald-800 mt-0.5">
+              All delivery charges are configured as <strong>FREE Delivery (₹0.00)</strong> across client website storefront and checkout.
+            </p>
+          </div>
+        </div>
       </div>
 
       {toast && (

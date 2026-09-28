@@ -31,7 +31,13 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
       url: 'https://femmeera.com/',
       logo: 'https://femmeera.com/logo.png',
       description: 'Femmeera is an online fashion store offering elegant ethnic and contemporary womens wear for every occasion.',
-      sameAs: ['https://instagram.com/femmeera'],
+      sameAs: [
+        'https://www.instagram.com/femmeera.co/',
+        'https://www.facebook.com/profile.php?id=61595048331512',
+        'https://www.youtube.com/@Femmeera_co',
+        'https://x.com/femmeera_co',
+        'https://in.pinterest.com/femmeera_co/',
+      ],
       contactPoint: {
         '@type': 'ContactPoint',
         contactType: 'customer support',

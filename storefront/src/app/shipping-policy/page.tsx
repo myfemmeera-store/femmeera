@@ -77,7 +77,7 @@ export default function ShippingPolicyPage() {
               <div className="bg-white p-5 rounded-2xl border border-[#EFE6D8] space-y-2">
                 <Truck className="w-5 h-5 text-[#B38548]" />
                 <h4 className="font-bold text-neutral-900 text-sm">Free Express Shipping</h4>
-                <p className="text-neutral-500">On all orders above ₹{policy?.free_shipping_threshold?.toLocaleString('en-IN') || '2,000'}</p>
+                <p className="text-emerald-700 font-semibold">100% FREE Delivery on all orders nationwide (No Minimum Order)</p>
               </div>
 
               <div className="bg-white p-5 rounded-2xl border border-[#EFE6D8] space-y-2">

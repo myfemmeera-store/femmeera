@@ -191,11 +191,12 @@ class CartAndCheckoutTest extends TestCase
         $val2 = $shippingService->checkServiceability('0123');
         $this->assertFalse($val2['serviceable']);
 
-        // Order subtotal = 1299.00 (below free shipping threshold 1999.00) -> Shipping cost applied
+        // Order subtotal = 1299.00 -> Storewide Free Delivery!
         $ship1 = $shippingService->calculateShipping(null, 1299.00);
-        $this->assertGreaterThan(0, $ship1['amount']);
+        $this->assertTrue($ship1['is_free_shipping']);
+        $this->assertEquals(0.00, $ship1['amount']);
 
-        // Order subtotal = 2500.00 (above free shipping threshold) -> Free Shipping!
+        // Order subtotal = 2500.00 -> Free Shipping!
         $ship2 = $shippingService->calculateShipping(null, 2500.00);
         $this->assertTrue($ship2['is_free_shipping']);
         $this->assertEquals(0.00, $ship2['amount']);

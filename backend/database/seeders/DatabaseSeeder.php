@@ -409,7 +409,7 @@ class DatabaseSeeder extends Seeder
             ['group_name' => 'general', 'key_name' => 'store_name', 'value_content' => 'Femmeera'],
             ['group_name' => 'general', 'key_name' => 'store_currency', 'value_content' => 'INR'],
             ['group_name' => 'general', 'key_name' => 'currency_symbol', 'value_content' => '₹'],
-            ['group_name' => 'shipping', 'key_name' => 'free_shipping_threshold', 'value_content' => '1999'],
+            ['group_name' => 'shipping', 'key_name' => 'free_shipping_threshold', 'value_content' => '0'],
             ['group_name' => 'seo', 'key_name' => 'default_meta_title', 'value_content' => 'Femmeera | Elegant Women\'s Traditional & Western Clothing'],
             ['group_name' => 'seo', 'key_name' => 'default_meta_description', 'value_content' => 'Shop premium sarees, kurtis, dresses, tops, and western trends at Femmeera.'],
         ];
@@ -438,8 +438,8 @@ class DatabaseSeeder extends Seeder
 
         // 9. Seed Phase 7 Shipping Methods
         $shippingMethods = [
-            ['name' => 'Standard Delivery', 'description' => 'Reliable doorstep delivery across India in 3–5 business days.', 'price' => 49.00, 'estimated_min_days' => 3, 'estimated_max_days' => 5, 'status' => 'ACTIVE'],
-            ['name' => 'Express Delivery', 'description' => 'Priority express delivery in 1–2 business days.', 'price' => 99.00, 'estimated_min_days' => 1, 'estimated_max_days' => 2, 'status' => 'ACTIVE'],
+            ['name' => 'Standard Delivery', 'description' => 'Reliable doorstep delivery across India in 3–5 business days.', 'price' => 0.00, 'estimated_min_days' => 3, 'estimated_max_days' => 5, 'status' => 'ACTIVE'],
+            ['name' => 'Express Delivery', 'description' => 'Priority express delivery in 1–2 business days.', 'price' => 0.00, 'estimated_min_days' => 1, 'estimated_max_days' => 2, 'status' => 'ACTIVE'],
         ];
 
         foreach ($shippingMethods as $method) {

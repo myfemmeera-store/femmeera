@@ -49,9 +49,9 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     }
   };
 
-  const freeShippingThreshold = cart?.shipping.free_shipping_threshold || 999;
-  const amountNeeded = cart?.shipping.amount_needed_for_free_shipping || 0;
-  const freeShippingProgress = Math.min(100, Math.round(((cart?.subtotal || 0) / freeShippingThreshold) * 100));
+  const freeShippingThreshold = cart?.shipping.free_shipping_threshold ?? 0;
+  const amountNeeded = cart?.shipping.amount_needed_for_free_shipping ?? 0;
+  const freeShippingProgress = freeShippingThreshold === 0 ? 100 : Math.min(100, Math.round(((cart?.subtotal || 0) / freeShippingThreshold) * 100));
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -85,19 +85,15 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
           {/* Free Shipping Progress Bar */}
           {cart && (
-            <div className="bg-amber-50/80 px-4 sm:px-5 py-3 border-b border-amber-100 text-xs sm:text-sm text-amber-900">
+            <div className="bg-emerald-50/90 px-4 sm:px-5 py-3 border-b border-emerald-100 text-xs sm:text-sm text-emerald-900">
               <div className="flex items-center gap-1.5 font-medium mb-1.5">
-                <Truck className="w-4 h-4 text-amber-700 shrink-0" />
-                {amountNeeded > 0 ? (
-                  <span>Add <strong className="text-amber-800 font-bold">₹{amountNeeded.toFixed(0)}</strong> more for <strong className="font-bold">FREE Delivery!</strong></span>
-                ) : (
-                  <span className="text-emerald-700 font-bold">🎉 Congratulations! You qualify for FREE Delivery!</span>
-                )}
+                <Truck className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span className="text-emerald-700 font-bold">🎉 Congratulations! You get FREE Delivery on all orders!</span>
               </div>
-              <div className="w-full bg-amber-200/60 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-emerald-200/70 rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-amber-600 h-full transition-all duration-500 rounded-full"
-                  style={{ width: `${freeShippingProgress}%` }}
+                  className="bg-emerald-600 h-full transition-all duration-500 rounded-full"
+                  style={{ width: `100%` }}
                 />
               </div>
             </div>
