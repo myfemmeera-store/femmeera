@@ -30,8 +30,8 @@ class CMSPublicController extends Controller
         $settings['store_logo'] = $settings['store_logo'] ?? asset('logo.png');
         $settings['currency_symbol'] = $settings['currency_symbol'] ?? '₹';
         $settings['store_currency'] = $settings['store_currency'] ?? 'INR';
-        $settings['free_shipping_threshold'] = $settings['free_shipping_threshold'] ?? '1499';
-        $settings['announcement_bar'] = $settings['announcement_bar'] ?? 'Free Shipping on Orders above ₹1499 | COD Available';
+        $settings['free_shipping_threshold'] = $settings['free_shipping_threshold'] ?? '0';
+        $settings['announcement_bar'] = $settings['announcement_bar'] ?? 'Free Shipping';
         $settings['promo_banner_image'] = $settings['promo_banner_image'] ?? '/images/unlock_world_fashion_banner.jpg';
         $settings['promo_banner_url'] = $settings['promo_banner_url'] ?? '/women/western-wear';
         $settings['promo_banner_status'] = $settings['promo_banner_status'] ?? 'ACTIVE';

@@ -36,7 +36,7 @@ export const Header: React.FC = () => {
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [logoUrl, setLogoUrl] = useState('/logo.png');
-  const [announcementText, setAnnouncementText] = useState('Free Shipping on All Orders Nationwide | Cash on Delivery Available');
+  const [announcementText, setAnnouncementText] = useState('Free Shipping');
   const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
