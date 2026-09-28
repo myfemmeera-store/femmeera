@@ -603,6 +603,20 @@ export default function EditProductClient() {
                                   <Trash2 className="w-3 h-3" />
                                 </button>
                               </div>
+
+                              <div>
+                                <label className="text-[9px] font-bold text-neutral-400 block uppercase">Color Section:</label>
+                                <select
+                                  value={img.color_name || ''}
+                                  onChange={(e) => setImageColor(globalIndex, e.target.value)}
+                                  className="w-full text-[11px] font-bold px-1.5 py-1 border border-neutral-200 rounded bg-white text-neutral-800"
+                                >
+                                  <option value="">-- Unassigned --</option>
+                                  {configuredColors.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
+                                </select>
+                              </div>
                             </div>
                           );
                         })}

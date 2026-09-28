@@ -112,8 +112,6 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       return [{ name: 'Standard', code: '#B38548', image: defaultImg, price: Number(product?.price || 2199), mrp: Number(product?.mrp || 2999) }];
     }
 
-    const hasAnyTaggedImages = product?.images?.some((img) => Boolean(img.color_name && img.color_name.trim()));
-
     const colorList: { name: string; code: string; image: string; price: number; mrp: number }[] = [];
 
     Array.from(allColorNames).forEach((colorName) => {
@@ -124,43 +122,51 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       const hex = matchingVariant?.color_code || (
         cleanColor === 'beige' ? '#E6D7C3' :
         cleanColor === 'black' ? '#222222' :
-        cleanColor === 'white' ? '#FFFFFF' :
+        cleanColor === 'white' || cleanColor === 'ivory white' ? '#FFFFFF' :
         cleanColor === 'peach' ? '#FFDAB9' :
-        cleanColor === 'pink' ? '#FFC0CB' :
-        cleanColor === 'ruby red' || cleanColor === 'red' ? '#E0115F' :
-        cleanColor === 'royal blue' || cleanColor === 'blue' ? '#002366' :
-        cleanColor === 'green' || cleanColor === 'emerald' ? '#50C878' :
-        cleanColor === 'yellow' || cleanColor === 'mustard' ? '#FFDB58' :
+        cleanColor === 'pink' || cleanColor === 'blush pink' ? '#FFC0CB' :
+        cleanColor === 'mauve pink' || cleanColor === 'mauve' ? '#E0B0FF' :
+        cleanColor === 'ruby red' || cleanColor === 'red' || cleanColor === 'maroon' ? '#E0115F' :
+        cleanColor === 'royal blue' || cleanColor === 'blue' || cleanColor === 'navy blue' ? '#002366' :
+        cleanColor === 'green' || cleanColor === 'emerald' || cleanColor === 'emerald green' ? '#50C878' :
+        cleanColor === 'yellow' || cleanColor === 'mustard' || cleanColor === 'mustard yellow' ? '#FFDB58' :
         cleanColor === 'purple' || cleanColor === 'lavender' ? '#E6E6FA' :
+        cleanColor === 'gold' ? '#D4AF37' :
         '#B38548'
       );
 
+      // 1. Primary image tagged with this exact color
       let colorImg = product?.images?.find((img) => 
         img.color_name && img.color_name.trim().toLowerCase() === cleanColor && img.is_primary
       )?.image_url;
 
+      // 2. Any image tagged with this exact color
       if (!colorImg && product?.images) {
         colorImg = product.images.find((img) => 
           img.color_name && img.color_name.trim().toLowerCase() === cleanColor
         )?.image_url;
       }
 
+      // 3. Any image tagged containing this color string
+      if (!colorImg && product?.images) {
+        colorImg = product.images.find((img) => {
+          if (!img.color_name) return false;
+          const tag = img.color_name.trim().toLowerCase();
+          return tag.includes(cleanColor) || cleanColor.includes(tag);
+        })?.image_url;
+      }
+
+      // 4. Image URL containing color name
       if (!colorImg && product?.images) {
         colorImg = product.images.find((img) => 
           img.image_url && img.image_url.toLowerCase().includes(cleanColor)
         )?.image_url;
       }
 
-      if (!colorImg && !hasAnyTaggedImages && product?.images && product.images.length > 0) {
-        const colorArray = Array.from(allColorNames);
-        const colorIndex = colorArray.findIndex((c) => c.trim().toLowerCase() === cleanColor);
-        if (colorIndex !== -1) {
-          const totalImages = product.images.length;
-          const totalColors = colorArray.length;
-          const itemsPerColor = Math.max(1, Math.floor(totalImages / totalColors));
-          const startIndex = Math.min(colorIndex * itemsPerColor, totalImages - 1);
-          colorImg = product.images[startIndex]?.image_url;
-        }
+      // 5. Fallback: untagged image or primary image, BUT never force an image tagged with a different color
+      if (!colorImg && product?.images && product.images.length > 0) {
+        const untaggedImg = product.images.find((img) => !img.color_name || !img.color_name.trim())?.image_url;
+        colorImg = untaggedImg || product.images[0]?.image_url;
       }
 
       const price = Number(matchingVariant?.price || product?.price || 2199);
@@ -179,10 +185,15 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   }, [product?.variants, product?.images, product?.price, product?.mrp]);
 
   useEffect(() => {
-    if (colorOptions.length > 0 && (!selectedColor || !colorOptions.some(c => c.name === selectedColor))) {
-      setSelectedColor(colorOptions[0].name);
+    if (colorOptions.length > 0) {
+      const defaultVariantColor = product?.variants?.[0]?.color?.trim();
+      const variantMatch = defaultVariantColor && colorOptions.find(c => c.name.trim().toLowerCase() === defaultVariantColor.toLowerCase());
+
+      if (!selectedColor || !colorOptions.some(c => c.name.trim().toLowerCase() === selectedColor.trim().toLowerCase())) {
+        setSelectedColor(variantMatch ? variantMatch.name : colorOptions[0].name);
+      }
     }
-  }, [colorOptions]);
+  }, [colorOptions, product?.variants]);
 
   const colorSpecificImages = React.useMemo(() => {
     if (!product?.images || product.images.length === 0) {
@@ -194,38 +205,37 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     }
 
     // 1. Direct tag matches (case-insensitive, trimmed)
-    const colorSectionMatches = product.images.filter((img) => 
+    const exactMatches = product.images.filter((img) => 
       img.color_name && img.color_name.trim().toLowerCase() === cleanSelected
     );
-    if (colorSectionMatches.length > 0) {
-      return colorSectionMatches.map((img) => img.image_url);
-    }
 
-    // 2. Loose tag match (e.g. "Royal Blue" matches "blue" or "mustard yellow" matches "mustard")
+    // 2. Loose tag match
     const looseMatches = product.images.filter((img) => {
       if (!img.color_name) return false;
       const tag = img.color_name.trim().toLowerCase();
-      return tag.includes(cleanSelected) || cleanSelected.includes(tag);
+      return tag === cleanSelected || tag.includes(cleanSelected) || cleanSelected.includes(tag);
     });
-    if (looseMatches.length > 0) {
-      return looseMatches.map((img) => img.image_url);
-    }
 
     // 3. URL string matches
     const urlMatches = product.images.filter((img) => 
       img.image_url && img.image_url.toLowerCase().includes(cleanSelected)
     );
-    if (urlMatches.length > 0) {
-      return urlMatches.map((img) => img.image_url);
+
+    const matched = exactMatches.length > 0 ? exactMatches : (looseMatches.length > 0 ? looseMatches : urlMatches);
+
+    // Untagged general photos visible across all colors
+    const untaggedImages = product.images.filter((img) => !img.color_name || !img.color_name.trim());
+
+    if (matched.length > 0) {
+      const combined = [...matched, ...untaggedImages];
+      const uniqueUrls = Array.from(new Set(combined.map((img) => img.image_url)));
+      return uniqueUrls;
     }
 
-    // 4. Untagged images (images with no color assigned are visible across all colors)
-    const untaggedImages = product.images.filter((img) => !img.color_name || !img.color_name.trim());
     if (untaggedImages.length > 0) {
       return untaggedImages.map((img) => img.image_url);
     }
 
-    // 5. Fallback: return all images
     return product.images.map((img) => img.image_url);
   }, [product?.images, selectedColor]);
 
@@ -242,7 +252,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   useEffect(() => {
     if (selectedColor && colorOptions.length > 0) {
       const activeCard = colorOptions.find((c) => c.name.trim().toLowerCase() === selectedColor.trim().toLowerCase());
-      if (activeCard?.image) {
+      if (activeCard?.image && displayImages.includes(activeCard.image)) {
         setSelectedImage(activeCard.image);
       } else if (displayImages.length > 0) {
         setSelectedImage(displayImages[0]);
