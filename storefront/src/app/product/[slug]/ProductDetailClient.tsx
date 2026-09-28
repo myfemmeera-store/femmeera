@@ -113,8 +113,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     }
 
     const colorList: { name: string; code: string; image: string; price: number; mrp: number }[] = [];
+    const colorArray = Array.from(allColorNames);
+    const totalColors = colorArray.length;
+    const totalImages = product?.images?.length || 0;
 
-    Array.from(allColorNames).forEach((colorName) => {
+    colorArray.forEach((colorName, colorIndex) => {
       const cleanColor = colorName.trim().toLowerCase();
 
       const matchingVariant = product?.variants?.find((v) => v.color && v.color.trim().toLowerCase() === cleanColor);
@@ -163,10 +166,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
         )?.image_url;
       }
 
-      // 5. Fallback: untagged image or primary image, BUT never force an image tagged with a different color
-      if (!colorImg && product?.images && product.images.length > 0) {
-        const untaggedImg = product.images.find((img) => !img.color_name || !img.color_name.trim())?.image_url;
-        colorImg = untaggedImg || product.images[0]?.image_url;
+      // 5. Proportional Fallback: assign image index corresponding to this color's section
+      if (!colorImg && totalImages > 0 && product?.images) {
+        const itemsPerColor = totalImages / Math.max(1, totalColors);
+        const targetIndex = Math.min(Math.floor(colorIndex * itemsPerColor), totalImages - 1);
+        colorImg = product.images[targetIndex]?.image_url;
       }
 
       const price = Number(matchingVariant?.price || product?.price || 2199);
@@ -223,21 +227,32 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
     const matched = exactMatches.length > 0 ? exactMatches : (looseMatches.length > 0 ? looseMatches : urlMatches);
 
-    // Untagged general photos visible across all colors
-    const untaggedImages = product.images.filter((img) => !img.color_name || !img.color_name.trim());
-
     if (matched.length > 0) {
+      const untaggedImages = product.images.filter((img) => !img.color_name || !img.color_name.trim());
       const combined = [...matched, ...untaggedImages];
-      const uniqueUrls = Array.from(new Set(combined.map((img) => img.image_url)));
-      return uniqueUrls;
+      return Array.from(new Set(combined.map((img) => img.image_url)));
     }
 
-    if (untaggedImages.length > 0) {
-      return untaggedImages.map((img) => img.image_url);
+    // 4. Proportional Slicing Fallback when images are untagged
+    const colorArray = colorOptions.map((c) => c.name.trim().toLowerCase());
+    const colorIndex = colorArray.indexOf(cleanSelected);
+
+    if (colorIndex !== -1 && colorArray.length > 1) {
+      const totalImages = product.images.length;
+      const totalColors = colorArray.length;
+      const itemsPerColor = Math.max(1, Math.floor(totalImages / totalColors));
+      const startIndex = Math.min(colorIndex * itemsPerColor, totalImages - 1);
+      const isLastColor = colorIndex === totalColors - 1;
+      const endIndex = isLastColor ? totalImages : Math.min(startIndex + itemsPerColor, totalImages);
+
+      const colorSlice = product.images.slice(startIndex, endIndex);
+      if (colorSlice.length > 0) {
+        return colorSlice.map((img) => img.image_url);
+      }
     }
 
     return product.images.map((img) => img.image_url);
-  }, [product?.images, selectedColor]);
+  }, [product?.images, selectedColor, colorOptions]);
 
   const displayImages = React.useMemo(() => {
     if (!product?.images || product.images.length === 0) return [];
