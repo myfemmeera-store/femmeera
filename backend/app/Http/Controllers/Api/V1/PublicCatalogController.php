@@ -85,14 +85,14 @@ class PublicCatalogController extends Controller
                 $query->orderBy('price', 'desc');
                 break;
             case 'best_seller':
-                $query->orderBy('is_best_seller', 'desc')->orderBy('id', 'desc');
+                $query->orderBy('is_best_seller', 'desc')->orderBy('sort_order', 'asc')->orderBy('id', 'desc');
                 break;
             case 'featured':
-                $query->orderBy('is_featured', 'desc')->orderBy('id', 'desc');
+                $query->orderBy('is_featured', 'desc')->orderBy('sort_order', 'asc')->orderBy('id', 'desc');
                 break;
             case 'newest':
             default:
-                $query->orderBy('id', 'desc');
+                $query->orderBy('sort_order', 'asc')->orderBy('id', 'desc');
                 break;
         }
 

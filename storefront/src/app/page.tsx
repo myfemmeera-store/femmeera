@@ -153,9 +153,9 @@ const defaultWesternWear = [
 export default async function HomePage() {
   const [categoriesRes, productsRes, traditionalRes, westernRes, settingsRes] = await Promise.all([
     categoryService.getCategories().catch(() => ({ success: false, data: [] })),
-    productService.getProducts({ page: 1 }).catch(() => ({ success: false, data: [] })),
-    productService.getProducts({ category_slug: 'traditional-wear' }).catch(() => ({ success: false, data: [] })),
-    productService.getProducts({ category_slug: 'western-wear' }).catch(() => ({ success: false, data: [] })),
+    productService.getProducts({ page: 1, per_page: 8 }).catch(() => ({ success: false, data: [] })),
+    productService.getProducts({ category_slug: 'traditional-wear', per_page: 8 }).catch(() => ({ success: false, data: [] })),
+    productService.getProducts({ category_slug: 'western-wear', per_page: 8 }).catch(() => ({ success: false, data: [] })),
     cmsService.getSettings().catch(() => ({ success: false, data: {} })),
   ]);
 
@@ -166,13 +166,13 @@ export default async function HomePage() {
   const promoFit = settings.promo_banner_fit || 'cover';
 
   const rawProducts = productsRes.data || [];
-  const displayNewArrivals = rawProducts.length > 0 ? rawProducts.slice(0, 6) : defaultNewArrivals;
+  const displayNewArrivals = rawProducts.length > 0 ? rawProducts.slice(0, 8) : defaultNewArrivals;
 
   const rawTraditional = traditionalRes.data || [];
-  const displayTraditional = rawTraditional.length > 0 ? rawTraditional.slice(0, 6) : defaultTraditionalWear;
+  const displayTraditional = rawTraditional.length > 0 ? rawTraditional.slice(0, 8) : defaultTraditionalWear;
 
   const rawWestern = westernRes.data || [];
-  const displayWestern = rawWestern.length > 0 ? rawWestern.slice(0, 6) : defaultWesternWear;
+  const displayWestern = rawWestern.length > 0 ? rawWestern.slice(0, 8) : defaultWesternWear;
 
   // Dynamic Shop By Category items from CMS Settings or default fallbacks
   const defaultShopCategories = [
@@ -297,14 +297,14 @@ export default async function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {displayNewArrivals.map((item: any) => {
+          {displayNewArrivals.map((item: any, idx: number) => {
             const variant = item.variants?.[0];
             const price = item.price ?? (variant ? variant.price : 1999);
             const imgUrl = item.image || item.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop';
             const productSlug = item.slug || 'silk-lehenga';
 
             return (
-              <Link key={item.id} href={`/product/${productSlug}`} className="group bg-white rounded-2xl border border-[#EFE6D8] overflow-hidden shadow-2xs hover:shadow-md transition-all block">
+              <Link key={item.id} href={`/product/${productSlug}`} className={`group bg-white rounded-2xl border border-[#EFE6D8] overflow-hidden shadow-2xs hover:shadow-md transition-all block ${idx >= 6 ? 'hidden lg:block' : ''}`}>
                 <div className="relative aspect-3/4 bg-neutral-100 overflow-hidden">
                   <Image
                     src={imgUrl}
@@ -392,40 +392,44 @@ export default async function HomePage() {
         </div>
 
         <div className="flex md:grid md:grid-cols-4 gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory px-4 -mx-4 sm:px-0 sm:mx-0">
-          {featuredCollections.map((col, idx) => (
-            <div key={idx} className="relative h-72 sm:h-80 rounded-2xl overflow-hidden group shadow-xs shrink-0 snap-center w-72 sm:w-auto bg-neutral-900">
-              <Image
-                src={col.image}
-                alt={col.title}
-                fill
-                className={`transition-transform duration-700 group-hover:scale-105 ${
-                  col.fit === 'contain'
-                    ? 'object-contain bg-neutral-900'
-                    : col.fit === 'top'
-                    ? 'object-cover object-top'
-                    : col.fit === 'bottom'
-                    ? 'object-cover object-bottom'
-                    : 'object-cover'
-                }`}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-6 flex flex-col justify-end text-white">
-                <h3 className="font-sans font-bold text-sm tracking-wider uppercase mb-1">
-                  {col.title}
-                </h3>
-                <p className="text-[11px] text-neutral-200 line-clamp-2 mb-4 font-normal">
-                  {col.subtitle}
-                </p>
-                <div>
-                  <Link
-                    href={col.link}
-                    className="inline-block px-4 py-2 bg-white text-neutral-900 font-bold text-[10px] uppercase tracking-wider rounded-lg hover:bg-[#B38548] hover:text-white transition-colors"
-                  >
-                    EXPLORE
-                  </Link>
+          {featuredCollections.map((col, idx) => {
+            const targetLink = col.link && col.link.trim() !== '' ? col.link : '/women/traditional-wear';
+            return (
+              <Link
+                key={idx}
+                href={targetLink}
+                className="relative h-72 sm:h-80 rounded-2xl overflow-hidden group shadow-xs hover:shadow-xl shrink-0 snap-center w-72 sm:w-auto bg-neutral-900 block cursor-pointer transition-all duration-300"
+              >
+                <Image
+                  src={col.image}
+                  alt={col.title}
+                  fill
+                  className={`transition-transform duration-700 group-hover:scale-105 ${
+                    col.fit === 'contain'
+                      ? 'object-contain bg-neutral-900'
+                      : col.fit === 'top'
+                      ? 'object-cover object-top'
+                      : col.fit === 'bottom'
+                      ? 'object-cover object-bottom'
+                      : 'object-cover'
+                  }`}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-6 flex flex-col justify-end text-white">
+                  <h3 className="font-sans font-bold text-sm tracking-wider uppercase mb-1 group-hover:text-[#E8DEC8] transition-colors">
+                    {col.title}
+                  </h3>
+                  <p className="text-[11px] text-neutral-200 line-clamp-2 mb-4 font-normal">
+                    {col.subtitle}
+                  </p>
+                  <div>
+                    <span className="inline-block px-4 py-2 bg-white text-neutral-900 font-bold text-[10px] uppercase tracking-wider rounded-lg group-hover:bg-[#B38548] group-hover:text-white transition-colors shadow-xs">
+                      EXPLORE
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -451,7 +455,7 @@ export default async function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {displayTraditional.map((item: any) => {
+          {displayTraditional.map((item: any, idx: number) => {
             const variant = item.variants?.[0];
             const price = item.price ?? (variant ? variant.price : 4999);
             const mrp = item.mrp ?? (variant ? variant.mrp : price * 1.3);
@@ -459,7 +463,7 @@ export default async function HomePage() {
             const productSlug = item.slug || 'handcrafted-saree';
 
             return (
-              <Link key={item.id} href={`/product/${productSlug}`} className="group bg-white rounded-2xl border border-[#EFE6D8] overflow-hidden shadow-2xs hover:shadow-md transition-all block">
+              <Link key={item.id} href={`/product/${productSlug}`} className={`group bg-white rounded-2xl border border-[#EFE6D8] overflow-hidden shadow-2xs hover:shadow-md transition-all block ${idx >= 6 ? 'hidden lg:block' : ''}`}>
                 <div className="relative aspect-3/4 bg-neutral-100 overflow-hidden">
                   <Image
                     src={imgUrl}
@@ -549,7 +553,7 @@ export default async function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {displayWestern.map((item: any) => {
+          {displayWestern.map((item: any, idx: number) => {
             const variant = item.variants?.[0];
             const price = item.price ?? (variant ? variant.price : 3499);
             const mrp = item.mrp ?? (variant ? variant.mrp : price * 1.3);
@@ -557,7 +561,7 @@ export default async function HomePage() {
             const productSlug = item.slug || 'western-dress';
 
             return (
-              <Link key={item.id} href={`/product/${productSlug}`} className="group bg-white rounded-2xl border border-[#EFE6D8] overflow-hidden shadow-2xs hover:shadow-md transition-all block">
+              <Link key={item.id} href={`/product/${productSlug}`} className={`group bg-white rounded-2xl border border-[#EFE6D8] overflow-hidden shadow-2xs hover:shadow-md transition-all block ${idx >= 6 ? 'hidden lg:block' : ''}`}>
                 <div className="relative aspect-3/4 bg-neutral-100 overflow-hidden">
                   <Image
                     src={imgUrl}

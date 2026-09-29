@@ -13,7 +13,23 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, Search, Edit2, Archive, Package, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Edit2,
+  Archive,
+  Package,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
+  ArrowUp,
+  ArrowDown,
+  Save,
+  X,
+  Sparkles,
+  Layers
+} from 'lucide-react';
 
 export default function ProductsPage() {
   const { showToast } = useToast();
@@ -31,6 +47,14 @@ export default function ProductsPage() {
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isArchiving, setIsArchiving] = useState(false);
+
+  // Reorder mode state
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [reorderCategory, setReorderCategory] = useState<string>(''); // '' = all/new arrivals, 'traditional-wear', 'western-wear'
+  const [reorderList, setReorderList] = useState<Product[]>([]);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [isLoadingReorder, setIsLoadingReorder] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   // Debounce search input
   useEffect(() => {
@@ -88,20 +112,235 @@ export default function ProductsPage() {
     }
   };
 
+  // Reorder functions
+  const openReorderMode = async (catSlug: string = '') => {
+    setReorderCategory(catSlug);
+    setIsReorderMode(true);
+    setIsLoadingReorder(true);
+    try {
+      const res = await productService.getProducts(1, '', catSlug, 100);
+      if (res.success && res.data) {
+        setReorderList(res.data);
+      }
+    } catch (err) {
+      showToast('Failed to load products for reordering.', 'error');
+    } finally {
+      setIsLoadingReorder(false);
+    }
+  };
+
+  const moveItem = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= reorderList.length) return;
+    const updated = [...reorderList];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+    setReorderList(updated);
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+    moveItem(draggedIndex, targetIndex);
+    setDraggedIndex(null);
+  };
+
+  const saveProductOrder = async () => {
+    if (reorderList.length === 0) return;
+    setIsSavingOrder(true);
+    try {
+      const payload = reorderList.map((item, idx) => ({
+        id: item.id,
+        sort_order: idx + 1,
+      }));
+      const res = await productService.reorderProducts(payload);
+      if (res.success) {
+        showToast('Product order updated successfully!', 'success');
+        setIsReorderMode(false);
+        loadProducts();
+      } else {
+        showToast(res.message || 'Failed to save product order.', 'error');
+      }
+    } catch (err) {
+      showToast('Error saving product order.', 'error');
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">Products Catalog</h1>
-          <p className="text-xs text-neutral-500">Manage women's traditional & western clothing catalog</p>
+          <p className="text-xs text-neutral-500">Manage women's traditional & western clothing catalog & section order</p>
         </div>
-        <Link href="/dashboard/products/new">
-          <Button leftIcon={<Plus className="w-4 h-4 shrink-0" />}>
-            Add New Product
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => openReorderMode('')}
+            leftIcon={<Layers className="w-4 h-4 text-[#B38548]" />}
+          >
+            Reorder Products
           </Button>
-        </Link>
+          <Link href="/dashboard/products/new">
+            <Button leftIcon={<Plus className="w-4 h-4 shrink-0" />}>
+              Add New Product
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {/* REORDER PRODUCTS SECTION MODAL / VIEW */}
+      {isReorderMode && (
+        <Card className="!p-5 border-2 border-[#B38548]/30 shadow-lg bg-neutral-50 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 pb-4">
+            <div>
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-[#B38548]" />
+                <h2 className="text-base font-bold text-neutral-900">
+                  Drag & Drop Product Ordering
+                </h2>
+              </div>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Drag products up or down to set their display sequence on the homepage (New Arrivals, Traditional & Western Wear).
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                size="sm"
+                onClick={saveProductOrder}
+                isLoading={isSavingOrder}
+                leftIcon={<Save className="w-4 h-4" />}
+                className="bg-[#B38548] hover:bg-[#966C32] text-white"
+              >
+                Save Order
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsReorderMode(false)}
+                className="text-neutral-500"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Section Filter Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-neutral-200">
+            <button
+              onClick={() => openReorderMode('')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0 ${
+                reorderCategory === ''
+                  ? 'bg-neutral-900 text-white'
+                  : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+              }`}
+            >
+              All / New Arrivals
+            </button>
+            <button
+              onClick={() => openReorderMode('traditional-wear')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0 ${
+                reorderCategory === 'traditional-wear'
+                  ? 'bg-[#B38548] text-white'
+                  : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+              }`}
+            >
+              Traditional Wear
+            </button>
+            <button
+              onClick={() => openReorderMode('western-wear')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0 ${
+                reorderCategory === 'western-wear'
+                  ? 'bg-neutral-900 text-white'
+                  : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+              }`}
+            >
+              Western Wear
+            </button>
+          </div>
+
+          {/* Draggable Items List */}
+          {isLoadingReorder ? (
+            <div className="space-y-2 py-4">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : reorderList.length === 0 ? (
+            <p className="text-xs text-neutral-500 py-6 text-center">No products found in this section to reorder.</p>
+          ) : (
+            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+              {reorderList.map((item, idx) => {
+                const imgUrl = item.images && item.images.length > 0 ? item.images[0].image_url : null;
+                return (
+                  <div
+                    key={item.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, idx)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, idx)}
+                    className={`flex items-center justify-between p-3 bg-white rounded-xl border border-neutral-200 shadow-xs hover:border-[#B38548] transition-all cursor-move ${
+                      draggedIndex === idx ? 'opacity-50 border-dashed border-[#B38548]' : ''
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <div className="text-neutral-400 hover:text-neutral-700 cursor-grab active:cursor-grabbing p-1">
+                        <GripVertical className="w-5 h-5" />
+                      </div>
+                      <span className="font-mono font-bold text-xs bg-neutral-100 text-neutral-800 px-2 py-1 rounded-md shrink-0">
+                        #{idx + 1}
+                      </span>
+                      <div className="w-10 h-10 rounded-lg bg-neutral-100 border border-neutral-200 shrink-0 overflow-hidden relative">
+                        {imgUrl ? (
+                          <Image src={imgUrl} alt={item.name} fill className="object-cover" />
+                        ) : (
+                          <Package className="w-5 h-5 text-neutral-400 m-2" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-neutral-900 truncate">{item.name}</p>
+                        <p className="text-[10px] text-neutral-500 font-mono">{item.sku} {item.category ? `• ${item.category.name}` : ''}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-1 shrink-0 ml-2">
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={() => moveItem(idx, idx - 1)}
+                        className="p-1.5 text-neutral-500 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-100 rounded-lg"
+                        title="Move Up"
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === reorderList.length - 1}
+                        onClick={() => moveItem(idx, idx + 1)}
+                        className="p-1.5 text-neutral-500 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-100 rounded-lg"
+                        title="Move Down"
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Search & Filtering Bar */}
       <Card className="!p-3 sm:!p-4">
@@ -145,6 +384,7 @@ export default function ProductsPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-neutral-200 bg-neutral-50 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+                  <th className="py-3 px-4">Order #</th>
                   <th className="py-3 px-4">Product Info</th>
                   <th className="py-3 px-4">SKU</th>
                   <th className="py-3 px-4">Brand</th>
@@ -153,8 +393,11 @@ export default function ProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100 text-xs">
-                {products.map((p) => (
+                {products.map((p, idx) => (
                   <tr key={p.id} className="hover:bg-neutral-50/80 transition-colors">
+                    <td className="py-3.5 px-4 font-mono font-bold text-neutral-500 text-[11px]">
+                      #{p.sort_order || (currentPage - 1) * 15 + idx + 1}
+                    </td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0 overflow-hidden relative">
@@ -210,7 +453,7 @@ export default function ProductsPage() {
 
           {/* Mobile Product Cards Stack (visible on mobile < 768px) */}
           <div className="md:hidden space-y-3">
-            {products.map((p) => (
+            {products.map((p, idx) => (
               <Card key={p.id} className="!p-4">
                 <div className="flex items-start space-x-3">
                   <div className="w-14 h-14 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0">

@@ -90,6 +90,7 @@ export interface Product {
   is_featured: boolean;
   is_new: boolean;
   is_best_seller: boolean;
+  sort_order?: number;
   seo_title?: string | null;
   seo_description?: string | null;
   variants?: ProductVariant[];

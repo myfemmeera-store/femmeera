@@ -73,6 +73,7 @@ export interface Product {
   is_featured: boolean;
   is_new: boolean;
   is_best_seller: boolean;
+  sort_order?: number;
   price?: number;
   mrp?: number;
   rating?: number;

@@ -26,6 +26,7 @@ class Product extends Model
         'is_best_seller',
         'seo_title',
         'seo_description',
+        'sort_order',
         'shipping_type',
         'delivery_estimate',
         'return_policy_type',

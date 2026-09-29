@@ -33,7 +33,7 @@ class ProductAdminController extends Controller
             });
         }
 
-        $products = $query->orderBy('id', 'desc')->paginate($request->input('per_page', 15));
+        $products = $query->orderBy('sort_order', 'asc')->orderBy('id', 'desc')->paginate($request->input('per_page', 15));
 
         return response()->json([
             'success' => true,
@@ -432,5 +432,23 @@ class ProductAdminController extends Controller
             }
         }
         return null;
+    }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|integer|exists:products,id',
+            'items.*.sort_order' => 'required|integer',
+        ]);
+
+        foreach ($request->input('items') as $item) {
+            Product::where('id', $item['id'])->update(['sort_order' => $item['sort_order']]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Products reordered successfully.',
+        ], 200);
     }
 }

@@ -2,10 +2,10 @@ import { apiClient } from './apiClient';
 import { ApiResponse, Product } from '@/types';
 
 export const productService = {
-  async getProducts(page = 1, search = '', categoryId = ''): Promise<ApiResponse<Product[]>> {
-    let query = `?page=${page}`;
+  async getProducts(page = 1, search = '', categorySlug = '', perPage = 15): Promise<ApiResponse<Product[]>> {
+    let query = `?page=${page}&per_page=${perPage}`;
     if (search) query += `&search=${encodeURIComponent(search)}`;
-    if (categoryId) query += `&category_id=${categoryId}`;
+    if (categorySlug) query += `&category_slug=${encodeURIComponent(categorySlug)}`;
 
     return apiClient<Product[]>(`/admin/products${query}`);
   },
@@ -31,6 +31,13 @@ export const productService = {
   async deleteProduct(id: number): Promise<ApiResponse<null>> {
     return apiClient<null>(`/admin/products/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  async reorderProducts(items: { id: number; sort_order: number }[]): Promise<ApiResponse<null>> {
+    return apiClient<null>('/admin/products/reorder', {
+      method: 'POST',
+      body: JSON.stringify({ items }),
     });
   }
 };

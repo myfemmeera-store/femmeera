@@ -19,6 +19,7 @@ export interface ProductsResponsePayload {
 export const productService = {
   async getProducts(params?: {
     page?: number;
+    per_page?: number;
     search?: string;
     category_slug?: string;
     sort?: string;
@@ -27,6 +28,7 @@ export const productService = {
     gender?: string;
   }): Promise<ApiResponse<Product[]> & { related_products?: Product[] }> {
     let query = `?page=${params?.page || 1}`;
+    if (params?.per_page) query += `&per_page=${params.per_page}`;
     if (params?.search) query += `&search=${encodeURIComponent(params.search)}`;
     if (params?.category_slug) query += `&category_slug=${encodeURIComponent(params.category_slug)}`;
     if (params?.sort) query += `&sort=${encodeURIComponent(params.sort)}`;
