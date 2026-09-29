@@ -157,20 +157,31 @@ export default function ProductsPage() {
     if (reorderList.length === 0) return;
     setIsSavingOrder(true);
     try {
-      const payload = reorderList.map((item, idx) => ({
-        id: item.id,
-        sort_order: idx + 1,
-      }));
+      const payload = reorderList
+        .filter((item) => item && item.id)
+        .map((item, idx) => ({
+          id: Number(item.id),
+          sort_order: idx + 1,
+        }));
+
+      if (payload.length === 0) {
+        showToast('No products selected to reorder.', 'error');
+        return;
+      }
+
       const res = await productService.reorderProducts(payload);
-      if (res.success) {
+      if (res && res.success) {
         showToast('Product order updated successfully!', 'success');
         setIsReorderMode(false);
         loadProducts();
       } else {
-        showToast(res.message || 'Failed to save product order.', 'error');
+        showToast(res?.message || 'Failed to save product order.', 'error');
       }
     } catch (err: any) {
-      const errMsg = err?.message || (err instanceof Error ? err.message : 'Error saving product order.');
+      console.error('Reorder Error:', err);
+      const errMsg = err?.errors
+        ? Object.values(err.errors).flat().join(', ')
+        : err?.message || (err instanceof Error ? err.message : 'Error saving product order.');
       showToast(errMsg, 'error');
     } finally {
       setIsSavingOrder(false);

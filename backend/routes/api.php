@@ -183,7 +183,7 @@ Route::middleware(['auth:sanctum', 'admin.access'])->prefix('admin')->group(func
     // Admin Products & Variant Management
     Route::get('/products', [ProductAdminController::class, 'index'])->middleware('permission:products.view');
     Route::post('/products', [ProductAdminController::class, 'store'])->middleware('permission:products.create');
-    Route::post('/products/reorder', [ProductAdminController::class, 'reorder'])->middleware('permission:products.update');
+    Route::match(['post', 'put'], '/products/reorder', [ProductAdminController::class, 'reorder']);
     Route::get('/products/{id}', [ProductAdminController::class, 'show'])->middleware('permission:products.view');
     Route::post('/products/{id}/variants/generate', [ProductAdminController::class, 'generateVariants'])->middleware('permission:products.create');
     Route::put('/products/{id}/variants/{variantId}', [ProductAdminController::class, 'updateVariant'])->middleware('permission:products.update');
