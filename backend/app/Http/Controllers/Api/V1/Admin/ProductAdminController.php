@@ -438,7 +438,7 @@ class ProductAdminController extends Controller
     {
         $request->validate([
             'items' => 'required|array',
-            'items.*.id' => 'required|integer|exists:products,id',
+            'items.*.id' => 'required|integer',
             'items.*.sort_order' => 'required|integer',
         ]);
 

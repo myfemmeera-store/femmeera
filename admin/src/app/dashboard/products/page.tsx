@@ -169,8 +169,9 @@ export default function ProductsPage() {
       } else {
         showToast(res.message || 'Failed to save product order.', 'error');
       }
-    } catch (err) {
-      showToast('Error saving product order.', 'error');
+    } catch (err: any) {
+      const errMsg = err?.message || (err instanceof Error ? err.message : 'Error saving product order.');
+      showToast(errMsg, 'error');
     } finally {
       setIsSavingOrder(false);
     }
