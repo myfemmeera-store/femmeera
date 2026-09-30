@@ -38,13 +38,29 @@ class PublicCatalogController extends Controller
 
         // Category Filter
         if ($request->filled('category_slug')) {
-          $catSlug = $request->input('category_slug');
-          $category = Category::where('slug', $catSlug)->first();
+          $catSlug = trim($request->input('category_slug'));
+          $category = Category::where('slug', $catSlug)
+            ->orWhere('slug', strtolower($catSlug))
+            ->orWhere('name', 'LIKE', str_replace('-', ' ', $catSlug))
+            ->first();
 
           if ($category) {
-              $childIds = Category::where('parent_id', $category->id)->pluck('id')->toArray();
-              $catIds = array_merge([$category->id], $childIds);
-              $query->whereIn('category_id', $catIds);
+              $catIds = [$category->id];
+              $directChildren = Category::where('parent_id', $category->id)->pluck('id')->toArray();
+              if (!empty($directChildren)) {
+                  $catIds = array_merge($catIds, $directChildren);
+                  $grandChildren = Category::whereIn('parent_id', $directChildren)->pluck('id')->toArray();
+                  if (!empty($grandChildren)) {
+                      $catIds = array_merge($catIds, $grandChildren);
+                  }
+              }
+              $query->whereIn('category_id', array_unique($catIds));
+          } else {
+              $query->whereHas('category', function ($catQuery) use ($catSlug) {
+                  $cleanSlug = str_replace('-', ' ', $catSlug);
+                  $catQuery->where('slug', 'LIKE', "%{$catSlug}%")
+                           ->orWhere('name', 'LIKE', "%{$cleanSlug}%");
+              });
           }
         }
 

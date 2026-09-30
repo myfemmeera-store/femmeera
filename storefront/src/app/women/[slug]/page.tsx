@@ -7,6 +7,9 @@ import { JsonLd } from '@/components/ui/JsonLd';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 import { Metadata } from 'next';
 
+import { CategorySortSelect } from '@/components/ui/CategorySortSelect';
+import { CategoryPagination } from '@/components/ui/CategoryPagination';
+
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ page?: string; search?: string; sort?: string }>;
@@ -58,10 +61,17 @@ export default async function CategoryListingPage({ params, searchParams }: Cate
   const sParams = await searchParams;
   const currentPage = Number(sParams.page) || 1;
   const search = sParams.search || '';
+  const currentSort = sParams.sort || 'newest';
 
   const [categoriesRes, productsRes] = await Promise.all([
     categoryService.getCategories(),
-    productService.getProducts({ page: currentPage, category_slug: slug, search }),
+    productService.getProducts({
+      page: currentPage,
+      per_page: 24,
+      category_slug: slug,
+      search,
+      sort: currentSort,
+    }),
   ]);
 
   const cat = categoriesRes.data?.find((c) => c.slug === slug);
@@ -95,23 +105,26 @@ export default async function CategoryListingPage({ params, searchParams }: Cate
       {/* Filter & Sort Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 px-4 bg-neutral-50 rounded-2xl border border-neutral-200 text-xs">
         <div className="flex items-center space-x-2 font-bold text-neutral-700">
-          <SlidersHorizontal className="w-4 h-4" />
-          <span>Showing {products.length} Products</span>
+          <SlidersHorizontal className="w-4 h-4 text-[#B38548]" />
+          <span>
+            {meta?.total ? `Showing ${products.length} of ${meta.total} Products` : `Showing ${products.length} Products`}
+          </span>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <label className="font-bold text-neutral-500">Sort By:</label>
-          <select className="bg-white border border-neutral-200 rounded-lg px-3 py-1.5 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-black">
-            <option value="newest">Newest Arrivals</option>
-            <option value="price_low">Price: Low to High</option>
-            <option value="price_high">Price: High to Low</option>
-            <option value="featured">Featured</option>
-          </select>
-        </div>
+        <CategorySortSelect currentSort={currentSort} categorySlug={slug} />
       </div>
 
       {/* Product Grid */}
       <ProductGrid products={products} />
+
+      {/* Category Pagination */}
+      <CategoryPagination
+        currentPage={currentPage}
+        lastPage={meta?.last_page || 1}
+        categorySlug={slug}
+        currentSort={currentSort}
+        search={search}
+      />
 
       {/* Category SEO Copy & Related Categories Internal Links */}
       <div className="border-t border-neutral-200/80 pt-10 mt-12 space-y-8 text-xs text-neutral-600 leading-relaxed">
