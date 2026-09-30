@@ -28,7 +28,7 @@ export const Footer: React.FC = () => {
     settingService.getSettings().then((res) => {
       if (res.success && res.data) {
         if (res.data.store_logo) setLogoUrl(res.data.store_logo);
-        if (res.data.store_phone) setStorePhone(res.data.store_phone);
+        setStorePhone(res.data.store_phone || '');
         if (res.data.store_email) setStoreEmail(res.data.store_email);
         if (res.data.store_address) setStoreAddress(res.data.store_address);
         setSocials({
