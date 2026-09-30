@@ -67,16 +67,16 @@ const faqs = [
     icon: RotateCcw,
     items: [
       {
-        q: "Can I return a product?",
-        a: "Return eligibility depends on the product and the applicable return policy. Products must generally meet required return conditions (unused, unwashed, original tags intact). Please review our Return Policy before requesting a return.",
+        q: "Can I return or exchange a product?",
+        a: "Yes, items can be returned or exchanged within 7 days of delivery. For eligible returns, Femmeera arranges free reverse courier pickup from your delivery address. Customers do not need to arrange return shipping themselves. Items must be unused, unwashed, and in original condition with tags intact.",
       },
       {
-        q: "How do I request a return?",
-        a: "Log in to your Femmeera account, open 'My Orders', select the relevant order and click 'Request Return' to follow the quick return process.",
+        q: "How do I request a return or exchange?",
+        a: "Log in to your Femmeera account, go to 'My Orders', select the order and click 'Request Return / Exchange'. Once confirmed, Femmeera arranges a free doorstep reverse pickup to collect the item from your address.",
       },
       {
         q: "When will I receive my refund?",
-        a: "Once an eligible return has been received and inspected at our warehouse, the refund will be processed to your original payment method or bank account within 5-7 business days.",
+        a: "Once an eligible return has been collected, received and inspected at our warehouse, full refund (with zero restocking fees) is processed to your original payment method or bank account within 5-7 business days.",
       },
     ],
   },

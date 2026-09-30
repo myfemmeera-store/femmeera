@@ -47,7 +47,7 @@ class PublicPolicyController extends Controller
                 'return_window_days' => 7,
                 'allow_returns' => true,
                 'allow_exchanges' => true,
-                'content' => 'Items can be returned or exchanged within 7 days of delivery. Unused condition with original tags required.',
+                'content' => 'Items can be returned or exchanged within 7 days of delivery. For eligible returns, Femmeera arranges free reverse courier pickup from your delivery address—customers do not need to arrange return shipping themselves. Unused condition with original tags required. Full refund within 5-7 business days after inspection with zero restocking fees.',
             ],
         ]);
     }

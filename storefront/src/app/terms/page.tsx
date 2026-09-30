@@ -49,7 +49,7 @@ const termsSections = [
   {
     num: "8",
     title: "Returns & Refunds",
-    content: "Returns, size exchanges, and refunds are governed by Femmeera's applicable Shipping & Returns Policy. Items returned must be unused, unwashed, and in original brand condition with all tags intact.",
+    content: "Returns, size exchanges, and refunds are governed by Femmeera's Return Policy. Eligible returns qualify for free reverse courier pickup arranged by Femmeera from your delivery address within 7 days of delivery. Customers do not need to arrange return shipping themselves. Returned items must be unused, unwashed, and in original brand condition with all tags intact.",
   },
   {
     num: "9",
