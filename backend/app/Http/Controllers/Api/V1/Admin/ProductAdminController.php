@@ -33,7 +33,10 @@ class ProductAdminController extends Controller
             });
         }
 
-        $products = $query->orderBy('sort_order', 'asc')->orderBy('id', 'desc')->paginate($request->input('per_page', 15));
+        if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'sort_order')) {
+            $query->orderBy('sort_order', 'asc');
+        }
+        $products = $query->orderBy('id', 'desc')->paginate($request->input('per_page', 15));
 
         return response()->json([
             'success' => true,
@@ -441,6 +444,13 @@ class ProductAdminController extends Controller
             'items.*.id' => 'required|integer',
             'items.*.sort_order' => 'required|integer',
         ]);
+
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('products', 'sort_order')) {
+            \Illuminate\Support\Facades\Schema::table('products', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->integer('sort_order')->default(0)->after('is_best_seller');
+                $table->index('sort_order');
+            });
+        }
 
         foreach ($request->input('items') as $item) {
             Product::where('id', $item['id'])->update(['sort_order' => $item['sort_order']]);

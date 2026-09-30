@@ -76,6 +76,7 @@ class PublicCatalogController extends Controller
         }
 
         // Sorting
+        $hasSortOrder = \Illuminate\Support\Facades\Schema::hasColumn('products', 'sort_order');
         $sort = $request->input('sort', 'newest');
         switch ($sort) {
             case 'price_asc':
@@ -85,14 +86,25 @@ class PublicCatalogController extends Controller
                 $query->orderBy('price', 'desc');
                 break;
             case 'best_seller':
-                $query->orderBy('is_best_seller', 'desc')->orderBy('sort_order', 'asc')->orderBy('id', 'desc');
+                $query->orderBy('is_best_seller', 'desc');
+                if ($hasSortOrder) {
+                    $query->orderBy('sort_order', 'asc');
+                }
+                $query->orderBy('id', 'desc');
                 break;
             case 'featured':
-                $query->orderBy('is_featured', 'desc')->orderBy('sort_order', 'asc')->orderBy('id', 'desc');
+                $query->orderBy('is_featured', 'desc');
+                if ($hasSortOrder) {
+                    $query->orderBy('sort_order', 'asc');
+                }
+                $query->orderBy('id', 'desc');
                 break;
             case 'newest':
             default:
-                $query->orderBy('sort_order', 'asc')->orderBy('id', 'desc');
+                if ($hasSortOrder) {
+                    $query->orderBy('sort_order', 'asc');
+                }
+                $query->orderBy('id', 'desc');
                 break;
         }
 
