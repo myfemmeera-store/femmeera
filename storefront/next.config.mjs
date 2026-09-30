@@ -27,6 +27,14 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/google-merchant-feed.xml',
+        destination: 'https://api.femmeera.com/api/v1/feeds/google-merchant',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
