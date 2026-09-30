@@ -84,11 +84,19 @@ class PublicCatalogController extends Controller
         }
 
         // Price Filter
-        if ($request->filled('min_price')) {
-            $query->where('price', '>=', (float)$request->input('min_price'));
-        }
-        if ($request->filled('max_price')) {
-            $query->where('price', '<=', (float)$request->input('max_price'));
+        if ($request->filled('min_price') || $request->filled('max_price')) {
+            $minPrice = $request->filled('min_price') ? (float)$request->input('min_price') : null;
+            $maxPrice = $request->filled('max_price') ? (float)$request->input('max_price') : null;
+
+            $query->whereHas('variants', function ($vQuery) use ($minPrice, $maxPrice) {
+                $vQuery->where('status', 'ACTIVE');
+                if ($minPrice !== null) {
+                    $vQuery->where('price', '>=', $minPrice);
+                }
+                if ($maxPrice !== null) {
+                    $vQuery->where('price', '<=', $maxPrice);
+                }
+            });
         }
 
         // Sorting
@@ -96,10 +104,24 @@ class PublicCatalogController extends Controller
         $sort = $request->input('sort', 'newest');
         switch ($sort) {
             case 'price_asc':
-                $query->orderBy('price', 'asc');
+                $query->select('products.*')
+                    ->selectSub(function ($q) {
+                        $q->from('product_variants')
+                            ->selectRaw('MIN(price)')
+                            ->whereColumn('product_variants.product_id', 'products.id')
+                            ->where('product_variants.status', 'ACTIVE');
+                    }, 'effective_price')
+                    ->orderBy('effective_price', 'asc');
                 break;
             case 'price_desc':
-                $query->orderBy('price', 'desc');
+                $query->select('products.*')
+                    ->selectSub(function ($q) {
+                        $q->from('product_variants')
+                            ->selectRaw('MIN(price)')
+                            ->whereColumn('product_variants.product_id', 'products.id')
+                            ->where('product_variants.status', 'ACTIVE');
+                    }, 'effective_price')
+                    ->orderBy('effective_price', 'desc');
                 break;
             case 'best_seller':
                 $query->orderBy('is_best_seller', 'desc');
