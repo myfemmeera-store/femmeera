@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Truck, ShieldCheck, Clock, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { apiClient } from '@/services/apiClient';
 
 interface ShippingRule {
   id: number;
@@ -26,12 +27,11 @@ export default function ShippingPolicyPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/shipping-policy')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success) {
-          setPolicy(json.data.policy);
-          setRules(json.data.rules || []);
+    apiClient<{ policy: ShippingPolicyData; rules: ShippingRule[] }>('/shipping-policy')
+      .then((res) => {
+        if (res.success && res.data) {
+          setPolicy(res.data.policy);
+          setRules(res.data.rules || []);
         }
       })
       .catch(() => {})

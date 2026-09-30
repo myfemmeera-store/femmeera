@@ -167,6 +167,17 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
       ? product.images.map((img) => img.image_url).filter(Boolean)
       : ['https://femmeera.com/logo.png'];
 
+    const rawDesc = product.description || product.short_description || `Buy ${product.name} online at Femmeera. Discover premium women's traditional and western wear with free delivery across India.`;
+    const cleanDescription = rawDesc.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
+
+    const sellerSchema = {
+      '@type': 'Organization',
+      name: 'Femmeera',
+      url: 'https://femmeera.com',
+    };
+
+    const priceValidUntil = '2027-12-31';
+
     const returnPolicySchema = {
       '@type': 'MerchantReturnPolicy',
       applicableCountry: 'IN',
@@ -174,6 +185,7 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
       merchantReturnDays: 7,
       returnMethod: 'https://schema.org/ReturnByMail',
       returnFees: 'https://schema.org/FreeReturn',
+      refundType: 'https://schema.org/FullRefund',
     };
 
     const shippingDetailsSchema = {
@@ -207,30 +219,40 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
     const productUrl = `https://femmeera.com/product/${product.slug}`;
 
     if (variants.length > 0) {
-      const variantSchemas = variants.map((v) => ({
-        '@type': 'Product',
-        name: `${product.name} - ${v.color || 'Standard'} / ${v.size || 'Free Size'}`,
-        sku: v.sku || `${product.sku}-${v.id}`,
-        color: v.color || undefined,
-        size: v.size || undefined,
-        image: imageUrls,
-        offers: {
-          '@type': 'Offer',
-          url: productUrl,
-          priceCurrency: 'INR',
-          price: Number(v.price || minPrice),
-          availability: (v.stock ?? 1) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          itemCondition: 'https://schema.org/NewCondition',
-          hasMerchantReturnPolicy: returnPolicySchema,
-          shippingDetails: shippingDetailsSchema,
-        },
-      }));
+      const variantSchemas = variants.map((v) => {
+        const varSku = v.sku || `${product.sku || 'FEM'}-${v.id}`;
+        return {
+          '@type': 'Product',
+          name: `${product.name} - ${v.color || 'Standard'} / ${v.size || 'Free Size'}`,
+          sku: varSku,
+          mpn: varSku,
+          color: v.color || undefined,
+          size: v.size || undefined,
+          image: imageUrls,
+          brand: {
+            '@type': 'Brand',
+            name: product.brand || 'Femmeera',
+          },
+          offers: {
+            '@type': 'Offer',
+            url: productUrl,
+            priceCurrency: 'INR',
+            price: Number(v.price || minPrice),
+            priceValidUntil,
+            availability: (v.stock ?? 1) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            itemCondition: 'https://schema.org/NewCondition',
+            seller: sellerSchema,
+            hasMerchantReturnPolicy: returnPolicySchema,
+            shippingDetails: shippingDetailsSchema,
+          },
+        };
+      });
 
       schema = {
         '@context': 'https://schema.org',
         '@type': 'ProductGroup',
         name: product.name,
-        description: product.description || product.short_description || `Buy ${product.name} online at Femmeera.`,
+        description: cleanDescription,
         productGroupID: product.sku || `FEM-${product.id}`,
         url: productUrl,
         brand: {
@@ -244,13 +266,15 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
         hasVariant: variantSchemas,
       };
     } else {
+      const prodSku = product.sku || `FEM-${product.id}`;
       schema = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: product.name,
         image: imageUrls,
-        description: product.description || product.short_description || `Buy ${product.name} online at Femmeera.`,
-        sku: product.sku || `FEM-${product.id}`,
+        description: cleanDescription,
+        sku: prodSku,
+        mpn: prodSku,
         brand: {
           '@type': 'Brand',
           name: product.brand || 'Femmeera',
@@ -260,8 +284,10 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
           url: productUrl,
           priceCurrency: 'INR',
           price: minPrice,
+          priceValidUntil,
           availability: hasStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
           itemCondition: 'https://schema.org/NewCondition',
+          seller: sellerSchema,
           hasMerchantReturnPolicy: returnPolicySchema,
           shippingDetails: shippingDetailsSchema,
         },

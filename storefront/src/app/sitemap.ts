@@ -99,7 +99,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const staticUrls = new Set(staticRoutes.map((r) => r.url));
     const [categoriesRes, productsRes] = await Promise.all([
       categoryService.getCategories(),
-      productService.getProducts({ page: 1 }),
+      productService.getProducts({ page: 1, per_page: 1000 }),
     ]);
 
     const categoryRoutes: MetadataRoute.Sitemap = (categoriesRes.data || [])

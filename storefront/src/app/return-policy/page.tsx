@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { RotateCcw, CheckCircle2, AlertCircle, ChevronLeft, HelpCircle } from 'lucide-react';
+import { apiClient } from '@/services/apiClient';
 
 interface ReturnPolicyData {
   title: string;
@@ -17,11 +18,10 @@ export default function ReturnPolicyPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/return-policy')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success && json.data) {
-          setPolicy(json.data);
+    apiClient<ReturnPolicyData>('/return-policy')
+      .then((res) => {
+        if (res.success && res.data) {
+          setPolicy(res.data);
         }
       })
       .catch(() => {})
