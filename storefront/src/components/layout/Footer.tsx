@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Phone, Mail, Clock, MapPin } from 'lucide-react';
+import { ArrowRight, Phone, Mail } from 'lucide-react';
 import { settingService } from '@/services/settingService';
 import { apiClient } from '@/services/apiClient';
 
@@ -225,14 +225,6 @@ export const Footer: React.FC = () => {
             <li className="flex items-center space-x-2">
               <Mail className="w-3.5 h-3.5 text-[#B38548] shrink-0" />
               <span>{storeEmail}</span>
-            </li>
-            <li className="flex items-center space-x-2">
-              <Clock className="w-3.5 h-3.5 text-[#B38548] shrink-0" />
-              <span>Mon - Sat: 10AM - 7PM</span>
-            </li>
-            <li className="flex items-center space-x-2">
-              <MapPin className="w-3.5 h-3.5 text-[#B38548] shrink-0" />
-              <span>{storeAddress}</span>
             </li>
           </ul>
         </div>
