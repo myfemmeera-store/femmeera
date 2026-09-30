@@ -215,7 +215,7 @@ export const Header: React.FC = () => {
             </Link>
 
             <Link href="/women/traditional-wear" className="hover:text-[#B38548] transition-colors py-2">
-              Traditional Wear
+              TRADITIONAL WEAR
             </Link>
 
             {/* <Link href="/women/traditional-wear" className="hover:text-[#B38548] transition-colors py-2">

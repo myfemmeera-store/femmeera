@@ -21,6 +21,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/women/traditional-wear`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.95,
+    },
+    {
+      url: `${baseUrl}/women/western-wear`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.95,
+    },
+    {
       url: `${baseUrl}/shop`,
       lastModified: new Date(),
       changeFrequency: 'daily',
@@ -84,13 +96,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   try {
+    const staticUrls = new Set(staticRoutes.map((r) => r.url));
     const [categoriesRes, productsRes] = await Promise.all([
       categoryService.getCategories(),
       productService.getProducts({ page: 1 }),
     ]);
 
     const categoryRoutes: MetadataRoute.Sitemap = (categoriesRes.data || [])
-      .filter((cat) => Boolean(cat.slug))
+      .filter((cat) => Boolean(cat.slug) && !staticUrls.has(`${baseUrl}/women/${cat.slug}`))
       .map((cat) => ({
         url: `${baseUrl}/women/${cat.slug}`,
         lastModified: new Date(),

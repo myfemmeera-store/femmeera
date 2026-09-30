@@ -174,10 +174,10 @@ export const Footer: React.FC = () => {
           </h4>
           <ul className="space-y-2 text-neutral-600 text-[11px]">
             <li><Link href="/shop" className="hover:text-[#B38548] transition-colors">New Arrivals</Link></li>
-            <li><Link href="/women/traditional-wear" className="hover:text-[#B38548] transition-colors">Sarees</Link></li>
-            <li><Link href="/women/traditional-wear" className="hover:text-[#B38548] transition-colors">Lehengas</Link></li>
-            <li><Link href="/women/traditional-wear" className="hover:text-[#B38548] transition-colors">Kurtis</Link></li>
+            <li><Link href="/women/traditional-wear" className="hover:text-[#B38548] transition-colors">Traditional Wear</Link></li>
             <li><Link href="/women/western-wear" className="hover:text-[#B38548] transition-colors">Western Wear</Link></li>
+            <li><Link href="/women/traditional-wear" className="hover:text-[#B38548] transition-colors">Sarees & Lehengas</Link></li>
+            <li><Link href="/women/traditional-wear" className="hover:text-[#B38548] transition-colors">Kurtis & Suit Sets</Link></li>
             <li><Link href="/shop" className="hover:text-[#B38548] transition-colors">Sale</Link></li>
           </ul>
         </div>

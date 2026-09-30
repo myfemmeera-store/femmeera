@@ -4,7 +4,7 @@ import React from 'react';
 import { Product } from '@/types';
 
 interface JsonLdProps {
-  type: 'Product' | 'Organization' | 'WebSite' | 'BreadcrumbList' | 'FAQPage' | 'Article';
+  type: 'Product' | 'Organization' | 'WebSite' | 'BreadcrumbList' | 'FAQPage' | 'Article' | 'SiteNavigationElement';
   product?: Product;
   breadcrumbs?: { name: string; item: string }[];
   faqs?: { q: string; a: string }[];
@@ -44,6 +44,54 @@ export const JsonLd: React.FC<JsonLdProps> = ({ type, product, breadcrumbs, faqs
         email: 'support@femmeera.com',
         url: 'https://femmeera.com/contact',
       },
+    };
+  } else if (type === 'SiteNavigationElement') {
+    schema = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'ItemList',
+          '@id': 'https://femmeera.com/#site-navigation',
+          name: 'Femmeera Navigation',
+          itemListElement: [
+            {
+              '@type': 'SiteNavigationElement',
+              position: 1,
+              name: 'Traditional Wear',
+              description: 'Women\'s handcrafted sarees, lehengas, kurtis, and ethnic suit sets.',
+              url: 'https://femmeera.com/women/traditional-wear',
+            },
+            {
+              '@type': 'SiteNavigationElement',
+              position: 2,
+              name: 'Western Wear',
+              description: 'Chic modern dresses, co-ord sets, evening gowns, and partywear.',
+              url: 'https://femmeera.com/women/western-wear',
+            },
+            {
+              '@type': 'SiteNavigationElement',
+              position: 3,
+              name: 'New Arrivals',
+              description: 'Explore the latest women\'s fashion arrivals at Femmeera.',
+              url: 'https://femmeera.com/shop',
+            },
+            {
+              '@type': 'SiteNavigationElement',
+              position: 4,
+              name: 'About Femmeera',
+              description: 'Learn about Femmeera online women\'s fashion brand offering premium traditional and western wear.',
+              url: 'https://femmeera.com/about',
+            },
+            {
+              '@type': 'SiteNavigationElement',
+              position: 5,
+              name: 'Return & Exchange Policy',
+              description: 'Hassle-free 7-day return and exchange policy on Femmeera products.',
+              url: 'https://femmeera.com/return-policy',
+            },
+          ],
+        },
+      ],
     };
   } else if (type === 'WebSite') {
     schema = {

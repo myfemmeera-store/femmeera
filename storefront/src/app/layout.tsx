@@ -72,6 +72,7 @@ export default function RootLayout({
         <VisitorTracker />
         <JsonLd type="Organization" />
         <JsonLd type="WebSite" />
+        <JsonLd type="SiteNavigationElement" />
         <Header />
         <main className="flex-1 pb-16 sm:pb-0">{children}</main>
         <Footer />
