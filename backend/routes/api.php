@@ -184,10 +184,12 @@ Route::middleware(['auth:sanctum', 'admin.access'])->prefix('admin')->group(func
     Route::get('/products', [ProductAdminController::class, 'index'])->middleware('permission:products.view');
     Route::post('/products', [ProductAdminController::class, 'store'])->middleware('permission:products.create');
     Route::match(['post', 'put'], '/products/reorder', [ProductAdminController::class, 'reorder']);
-    Route::get('/products/{id}', [ProductAdminController::class, 'show'])->middleware('permission:products.view');
-    Route::post('/products/{id}/variants/generate', [ProductAdminController::class, 'generateVariants'])->middleware('permission:products.create');
-    Route::put('/products/{id}/variants/{variantId}', [ProductAdminController::class, 'updateVariant'])->middleware('permission:products.update');
-    Route::delete('/products/{id}/variants/{variantId}', [ProductAdminController::class, 'destroyVariant'])->middleware('permission:products.delete');
+    Route::get('/products/{id}', [ProductAdminController::class, 'show'])->where('id', '[0-9]+')->middleware('permission:products.view');
+    Route::put('/products/{id}', [ProductAdminController::class, 'update'])->where('id', '[0-9]+')->middleware('permission:products.update');
+    Route::delete('/products/{id}', [ProductAdminController::class, 'destroy'])->where('id', '[0-9]+')->middleware('permission:products.delete');
+    Route::post('/products/{id}/variants/generate', [ProductAdminController::class, 'generateVariants'])->where('id', '[0-9]+')->middleware('permission:products.create');
+    Route::put('/products/{id}/variants/{variantId}', [ProductAdminController::class, 'updateVariant'])->where('id', '[0-9]+')->middleware('permission:products.update');
+    Route::delete('/products/{id}/variants/{variantId}', [ProductAdminController::class, 'destroyVariant'])->where('id', '[0-9]+')->middleware('permission:products.delete');
 
     // Admin Inventory APIs
     Route::get('/inventory', [InventoryController::class, 'index'])->middleware('permission:inventory.view');
@@ -280,10 +282,6 @@ Route::middleware(['auth:sanctum', 'admin.access'])->prefix('admin')->group(func
     Route::post('/categories', [CategoryAdminController::class, 'store'])->middleware('permission:categories.create');
     Route::put('/categories/{id}', [CategoryAdminController::class, 'update'])->middleware('permission:categories.update');
     Route::delete('/categories/{id}', [CategoryAdminController::class, 'destroy'])->middleware('permission:categories.delete');
-
-    // Admin Products CRUD (update & delete)
-    Route::put('/products/{id}', [ProductAdminController::class, 'update'])->middleware('permission:products.update');
-    Route::delete('/products/{id}', [ProductAdminController::class, 'destroy'])->middleware('permission:products.delete');
 
     // Admin Reviews Moderation
     Route::get('/reviews', [ReviewAdminController::class, 'index'])->middleware('permission:reviews.view');
