@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
 class ProductFeedController extends Controller
 {
@@ -58,12 +57,29 @@ class ProductFeedController extends Controller
             ]);
         }
 
-        // XML Feed Output (RSS 2.0 with Google Merchant namespace)
-        $xml = new \SimpleXMLElement('<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"/>');
-        $channel = $xml->addChild('channel');
-        $channel->addChild('title', 'Femmeera Product Feed');
-        $channel->addChild('link', 'https://femmeera.com');
-        $channel->addChild('description', 'Official product catalog feed for Femmeera Women\'s Traditional & Western Wear.');
+        // XML Feed Output (RSS 2.0 with Google Merchant namespace via DOMDocument for robust entity escaping)
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+        $dom->formatOutput = true;
+
+        $rss = $dom->createElement('rss');
+        $rss->setAttribute('version', '2.0');
+        $rss->setAttribute('xmlns:g', 'http://base.google.com/ns/1.0');
+        $dom->appendChild($rss);
+
+        $channel = $dom->createElement('channel');
+        $rss->appendChild($channel);
+
+        $title = $dom->createElement('title');
+        $title->appendChild($dom->createTextNode('Femmeera Product Feed'));
+        $channel->appendChild($title);
+
+        $link = $dom->createElement('link');
+        $link->appendChild($dom->createTextNode('https://femmeera.com'));
+        $channel->appendChild($link);
+
+        $description = $dom->createElement('description');
+        $description->appendChild($dom->createTextNode('Official product catalog feed for Femmeera Women\'s Traditional & Western Wear.'));
+        $channel->appendChild($description);
 
         foreach ($products as $product) {
             $mainImage = $product->images->first()?->image_url ?? 'https://femmeera.com/logo.png';
@@ -72,38 +88,73 @@ class ProductFeedController extends Controller
                 ? $product->variants->contains(fn($v) => ($v->stock ?? 0) > 0)
                 : true;
 
-            $item = $channel->addChild('item');
-            $item->addChild('g:id', htmlspecialchars($product->sku ?: "FEM-{$product->id}"), 'http://base.google.com/ns/1.0');
-            $item->addChild('g:title', htmlspecialchars($product->name), 'http://base.google.com/ns/1.0');
-            
+            $item = $dom->createElement('item');
+            $channel->appendChild($item);
+
+            $id = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:id');
+            $id->appendChild($dom->createTextNode($product->sku ?: "FEM-{$product->id}"));
+            $item->appendChild($id);
+
+            $gTitle = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:title');
+            $gTitle->appendChild($dom->createTextNode($product->name));
+            $item->appendChild($gTitle);
+
             $rawDesc = $product->description ?: $product->short_description ?: "Buy {$product->name} online at Femmeera.";
-            $cleanDesc = htmlspecialchars(mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($rawDesc))), 0, 5000));
-            $item->addChild('g:description', $cleanDesc, 'http://base.google.com/ns/1.0');
-            
-            $item->addChild('g:link', htmlspecialchars("https://femmeera.com/product/{$product->slug}"), 'http://base.google.com/ns/1.0');
-            $item->addChild('g:image_link', htmlspecialchars($mainImage), 'http://base.google.com/ns/1.0');
-            $item->addChild('g:price', "{$price} INR", 'http://base.google.com/ns/1.0');
-            $item->addChild('g:availability', $hasStock ? 'in_stock' : 'out_of_stock', 'http://base.google.com/ns/1.0');
-            $item->addChild('g:brand', htmlspecialchars($product->brand ?: 'Femmeera'), 'http://base.google.com/ns/1.0');
-            $item->addChild('g:condition', 'new', 'http://base.google.com/ns/1.0');
-            $item->addChild('g:gender', 'female', 'http://base.google.com/ns/1.0');
-            
+            $cleanDesc = mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($rawDesc))), 0, 5000);
+            $gDesc = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:description');
+            $gDesc->appendChild($dom->createTextNode($cleanDesc));
+            $item->appendChild($gDesc);
+
+            $gLink = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:link');
+            $gLink->appendChild($dom->createTextNode("https://femmeera.com/product/{$product->slug}"));
+            $item->appendChild($gLink);
+
+            $gImage = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:image_link');
+            $gImage->appendChild($dom->createTextNode($mainImage));
+            $item->appendChild($gImage);
+
+            $gPrice = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:price');
+            $gPrice->appendChild($dom->createTextNode("{$price} INR"));
+            $item->appendChild($gPrice);
+
+            $gAvailability = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:availability');
+            $gAvailability->appendChild($dom->createTextNode($hasStock ? 'in_stock' : 'out_of_stock'));
+            $item->appendChild($gAvailability);
+
+            $gBrand = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:brand');
+            $gBrand->appendChild($dom->createTextNode($product->brand ?: 'Femmeera'));
+            $item->appendChild($gBrand);
+
+            $gCondition = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:condition');
+            $gCondition->appendChild($dom->createTextNode('new'));
+            $item->appendChild($gCondition);
+
+            $gGender = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:gender');
+            $gGender->appendChild($dom->createTextNode('female'));
+            $item->appendChild($gGender);
+
             if ($product->category?->name) {
-                $item->addChild('g:product_type', htmlspecialchars($product->category->name), 'http://base.google.com/ns/1.0');
+                $gType = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:product_type');
+                $gType->appendChild($dom->createTextNode($product->category->name));
+                $item->appendChild($gType);
             }
 
             $colors = array_filter(array_unique($product->variants->pluck('color')->toArray()));
             if (!empty($colors)) {
-                $item->addChild('g:color', htmlspecialchars(implode('/', $colors)), 'http://base.google.com/ns/1.0');
+                $gColor = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:color');
+                $gColor->appendChild($dom->createTextNode(implode('/', $colors)));
+                $item->appendChild($gColor);
             }
 
             $sizes = array_filter(array_unique($product->variants->pluck('size')->toArray()));
             if (!empty($sizes)) {
-                $item->addChild('g:size', htmlspecialchars(implode('/', $sizes)), 'http://base.google.com/ns/1.0');
+                $gSize = $dom->createElementNS('http://base.google.com/ns/1.0', 'g:size');
+                $gSize->appendChild($dom->createTextNode(implode('/', $sizes)));
+                $item->appendChild($gSize);
             }
         }
 
-        return response($xml->asXML(), 200, [
+        return response($dom->saveXML(), 200, [
             'Content-Type' => 'application/xml; charset=utf-8',
         ]);
     }
