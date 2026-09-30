@@ -125,6 +125,9 @@ class PublicCatalogController extends Controller
         }
 
         $perPage = (int)$request->input('per_page', 12);
+        if ($perPage > 5000) {
+            $perPage = 5000;
+        }
         $products = $query->paginate($perPage);
 
         // Related / Recommendation Products fallback if search/filter returns 0 results
