@@ -86,6 +86,7 @@ Route::get('/products', [PublicCatalogController::class, 'products']);
 Route::get('/products/suggestions', [PublicCatalogController::class, 'searchSuggestions']);
 Route::get('/products/{slug}', [PublicCatalogController::class, 'productBySlug']);
 Route::get('/feeds/google-merchant', [\App\Http\Controllers\Api\V1\ProductFeedController::class, 'googleMerchant']);
+Route::get('/feeds/google-product', [\App\Http\Controllers\Api\V1\ProductFeedController::class, 'googleMerchant']);
 
 Route::prefix('cms')->group(function () {
     Route::get('/hero-banners', [CMSPublicController::class, 'heroBanners']);

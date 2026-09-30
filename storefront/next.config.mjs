@@ -33,6 +33,10 @@ const nextConfig = {
         source: '/google-merchant-feed.xml',
         destination: 'https://api.femmeera.com/api/v1/feeds/google-merchant',
       },
+      {
+        source: '/google-product-feed.xml',
+        destination: 'https://api.femmeera.com/api/v1/feeds/google-product',
+      },
     ];
   },
 };
