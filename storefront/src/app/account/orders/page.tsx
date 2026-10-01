@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag, ArrowLeft, Truck, Package, Clock, CheckCircle2, MapPin, X, Star, MessageSquare, Check } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Truck, Package, Clock, CheckCircle2, MapPin, X, Star, MessageSquare, Check, RotateCcw } from 'lucide-react';
 import { Order } from '@/types';
 import { apiClient } from '@/services/apiClient';
 import { authService } from '@/services/authService';
@@ -144,6 +144,45 @@ export default function CustomerOrdersPage() {
       alert(err?.message || 'Error submitting product review.');
     } finally {
       setIsSubmittingReview(false);
+    }
+  };
+
+  // Return modal state
+  const [returnModalOrder, setReturnModalOrder] = useState<DetailedOrder | null>(null);
+  const [returnReason, setReturnReason] = useState<string>('Size / Fit issue');
+  const [returnComment, setReturnComment] = useState<string>('');
+  const [isSubmittingReturn, setIsSubmittingReturn] = useState<boolean>(false);
+
+  const handleSubmitReturn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!returnModalOrder) return;
+
+    setIsSubmittingReturn(true);
+    try {
+      const res = await apiClient<{ id: number }>('/customer/returns', {
+        method: 'POST',
+        body: JSON.stringify({
+          order_id: returnModalOrder.id,
+          reason: returnReason,
+          comment: returnComment,
+        }),
+      });
+
+      if (res.success) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === returnModalOrder.id ? { ...o, order_status: 'RETURN_REQUESTED' } : o))
+        );
+        setToastMsg('Return request submitted! Femmeera will arrange doorstep reverse pickup.');
+        setTimeout(() => setToastMsg(null), 5000);
+        setReturnModalOrder(null);
+        setReturnComment('');
+      } else {
+        alert(res.message || 'Failed to submit return request.');
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Error submitting return request.');
+    } finally {
+      setIsSubmittingReturn(false);
     }
   };
 
@@ -301,7 +340,24 @@ export default function CustomerOrdersPage() {
                     <span className="text-base font-bold text-[#B38548]">₹{Number(o.total_amount).toLocaleString('en-IN')}</span>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-wrap gap-y-2">
+                    {o.order_status === 'DELIVERED' && (
+                      <button
+                        onClick={() => setReturnModalOrder(o)}
+                        className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-[#8C6026] border border-[#E6D4B5] font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center space-x-1.5 shadow-2xs"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-[#8C6026]" />
+                        <span>Request Return / Exchange</span>
+                      </button>
+                    )}
+
+                    {o.order_status === 'RETURN_REQUESTED' && (
+                      <span className="px-3.5 py-2 bg-amber-100/80 text-amber-900 border border-amber-300/80 font-bold text-[11px] uppercase tracking-wider rounded-xl flex items-center space-x-1.5">
+                        <Clock className="w-3.5 h-3.5 text-amber-800" />
+                        <span>Return Requested (Reverse Pickup Pending)</span>
+                      </span>
+                    )}
+
                     <button
                       onClick={() => setSelectedTrackOrder(o)}
                       className="px-4 py-2 bg-[#B38548] hover:bg-[#966C32] text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center space-x-1.5"
@@ -551,6 +607,91 @@ export default function CustomerOrdersPage() {
                     <>
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Submit Product Review</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* REQUEST RETURN / EXCHANGE MODAL POPUP */}
+      {returnModalOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-[#EFE6D8] relative">
+            <button
+              onClick={() => setReturnModalOrder(null)}
+              className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-black rounded-full hover:bg-neutral-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#B38548]">
+                HASSLE-FREE 7-DAY RETURN & EXCHANGE
+              </span>
+              <h3 className="text-xl font-serif font-bold text-neutral-900">
+                Request Return or Exchange
+              </h3>
+              <p className="text-xs text-neutral-500">
+                For order <span className="font-bold text-neutral-800">#{returnModalOrder.order_number}</span>
+              </p>
+            </div>
+
+            <div className="bg-[#FAF4EB] p-4 rounded-2xl border border-[#EFE5D5] text-xs space-y-1">
+              <p className="font-bold text-neutral-900">🚚 Free Doorstep Reverse Pickup</p>
+              <p className="text-neutral-600">
+                Once approved, Femmeera arranges reverse courier pickup from your delivery address at ₹0 cost. You do not need to send physical paper labels or arrange your own courier.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmitReturn} className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-neutral-700 block mb-1">Reason for Return / Exchange *</label>
+                <select
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white border border-neutral-300 rounded-xl focus:outline-none focus:border-black font-medium text-xs"
+                >
+                  <option value="Size / Fit issue">Size / Fit Issue (Too Large or Small)</option>
+                  <option value="Defective or Damaged product">Defective / Damaged Product</option>
+                  <option value="Wrong product received">Wrong Item Delivered</option>
+                  <option value="Quality not as expected">Fabric / Quality Not as Expected</option>
+                  <option value="Changed mind">Changed Mind / Exchange Requested</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-neutral-700 block mb-1">Additional Notes / Comments (Optional)</label>
+                <textarea
+                  rows={3}
+                  value={returnComment}
+                  onChange={(e) => setReturnComment(e.target.value)}
+                  placeholder="Tell us more about why you'd like to return or exchange this item..."
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-xl focus:outline-none focus:border-black font-medium"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setReturnModalOrder(null)}
+                  className="flex-1 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold rounded-xl text-xs uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReturn}
+                  className="flex-[2] py-3 bg-[#B38548] hover:bg-[#966C32] text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-xs flex items-center justify-center space-x-1.5"
+                >
+                  {isSubmittingReturn ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Submit Return Request</span>
                     </>
                   )}
                 </button>

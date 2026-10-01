@@ -126,7 +126,7 @@ export interface Order {
   total_amount: number;
   currency: string;
   payment_status: 'UNPAID' | 'PAID' | 'FAILED' | 'REFUNDED';
-  order_status: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'RETURNED';
+  order_status: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'RETURNED' | 'RETURN_REQUESTED' | 'REFUNDED';
   shipping_address_snapshot: {
     name: string;
     address: string;
