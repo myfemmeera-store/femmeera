@@ -118,7 +118,7 @@ class CustomerReturnController extends Controller
             'refund_amount' => $order->total_amount,
         ]);
 
-        // Queue Return Notification Emails
+        // Queue Return Notification Emails & Create Store Notification
         try {
             // 1. Customer Email
             \App\Jobs\SendEmailNotificationJob::dispatch(
@@ -133,12 +133,20 @@ class CustomerReturnController extends Controller
                 ]
             );
 
-            // 2. Admin Alert Email
-            $adminEmail = env('ADMIN_NOTIFICATION_EMAIL', env('MAIL_FROM_ADDRESS', 'admin@femmeera.com'));
+            // 2. In-App Store Notification
+            \App\Models\Notification::createNotification(
+                'New Return Request',
+                "Return request #{$returnRequest->id} submitted for Order #{$order->order_number} ({$returnRequest->reason}).",
+                'order',
+                '/dashboard/returns'
+            );
+
+            // 3. Admin Alert Email
+            $adminEmail = env('ADMIN_NOTIFICATION_EMAIL', 'myfemmeera@gmail.com');
             \App\Jobs\SendEmailNotificationJob::dispatch(
                 'admin_new_return',
                 $adminEmail,
-                'Admin Concierge',
+                'Femmeera Admin Concierge',
                 [
                     'order_number' => $order->order_number,
                     'return_id' => $returnRequest->id,

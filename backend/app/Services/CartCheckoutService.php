@@ -219,7 +219,7 @@ class CartCheckoutService
                 'created_at' => now(),
             ]);
 
-            // 10. Queue Customer & Admin Order Confirmation Emails
+            // 10. Queue Customer & Admin Order Confirmation Emails & In-App Notification
             try {
                 $freshOrder = $order->fresh(['items']);
                 $orderData = $freshOrder ? $freshOrder->toArray() : $order->toArray();
@@ -235,15 +235,23 @@ class CartCheckoutService
                     );
                 }
 
-                $adminEmail = env('ADMIN_NOTIFICATION_EMAIL', env('MAIL_FROM_ADDRESS', 'myfemmeera@gmail.com'));
+                // Create Store In-App Notification
+                \App\Models\Notification::createNotification(
+                    'New Order Received',
+                    "Order #{$orderNumber} placed for ₹" . number_format($totalAmount, 2) . " by {$custName}.",
+                    'order',
+                    '/dashboard/orders'
+                );
+
+                $adminEmail = env('ADMIN_NOTIFICATION_EMAIL', 'myfemmeera@gmail.com');
                 \App\Jobs\SendEmailNotificationJob::dispatch(
                     'admin_new_order',
                     $adminEmail,
-                    'Admin Concierge',
+                    'Femmeera Admin Concierge',
                     ['order' => $orderData]
                 );
             } catch (\Throwable $ex) {
-                \Illuminate\Support\Facades\Log::warning('CartCheckoutService: Email dispatch failed: ' . $ex->getMessage());
+                \Illuminate\Support\Facades\Log::warning('CartCheckoutService: Email/Notification dispatch failed: ' . $ex->getMessage());
             }
 
             return $order->load(['items', 'latestPayment', 'statusHistory']);

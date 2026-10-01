@@ -20,20 +20,11 @@ import {
 } from 'lucide-react';
 import { User } from '@/types';
 import { authService } from '@/services/authService';
+import { notificationService, NotificationItem } from '@/services/notificationService';
 
 interface AdminNavbarProps {
   user: User | null;
   onOpenMobileMenu: () => void;
-}
-
-interface NotificationItem {
-  id: string;
-  type: 'order' | 'stock' | 'user' | 'payment';
-  title: string;
-  description: string;
-  time: string;
-  link: string;
-  isRead: boolean;
 }
 
 export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onOpenMobileMenu }) => {
@@ -45,6 +36,30 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onOpenMobileMenu
     live_visitors: 0,
     total_visitors: 0,
   });
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isLoadingNotifs, setIsLoadingNotifs] = useState(false);
+
+  // Fetch real store notifications from API
+  const fetchNotifications = async () => {
+    try {
+      setIsLoadingNotifs(true);
+      const res = await notificationService.getNotifications();
+      if (res.success && res.data) {
+        setNotifications(res.data);
+      }
+    } catch (err) {
+      console.warn('Failed to load store notifications:', err);
+    } finally {
+      setIsLoadingNotifs(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const notifInterval = setInterval(fetchNotifications, 15000); // refresh every 15 sec
+    return () => clearInterval(notifInterval);
+  }, []);
 
   // Poll live & total visitors count every 4 seconds
   useEffect(() => {
@@ -76,46 +91,6 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onOpenMobileMenu
     return () => clearInterval(interval);
   }, []);
 
-  // Initial Sample Notifications (Simulating live store events)
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: '1',
-      type: 'order',
-      title: 'New Order Received',
-      description: 'Order #FEM-9402 placed for ₹2,499 by Ananya Sharma.',
-      time: '10m ago',
-      link: '/dashboard/orders',
-      isRead: false,
-    },
-    {
-      id: '2',
-      type: 'stock',
-      title: 'Low Stock Alert',
-      description: 'Embroidered Silk Anarkali (Size L) has only 2 items left in stock.',
-      time: '45m ago',
-      link: '/dashboard/inventory',
-      isRead: false,
-    },
-    {
-      id: '3',
-      type: 'user',
-      title: 'New Customer Registered',
-      description: 'Priya Verma created a new account on Femmeera Store.',
-      time: '2h ago',
-      link: '/dashboard/customers',
-      isRead: false,
-    },
-    {
-      id: '4',
-      type: 'payment',
-      title: 'Payment Confirmed',
-      description: 'Razorpay payment ₹1,899 verified for Order #FEM-9398.',
-      time: '3h ago',
-      link: '/dashboard/payments',
-      isRead: true,
-    },
-  ]);
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -129,12 +104,18 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onOpenMobileMenu
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await notificationService.markAllAsRead();
+    } catch (err) {}
   };
 
-  const markAsRead = (id: string) => {
+  const markAsRead = async (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+    try {
+      await notificationService.markAsRead(id);
+    } catch (err) {}
   };
 
   const filteredNotifications = notifications.filter((n) => {

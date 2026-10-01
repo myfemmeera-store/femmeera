@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Admin\CustomerAdminController;
 use App\Http\Controllers\Api\V1\Admin\CategoryAdminController;
 use App\Http\Controllers\Api\V1\Admin\CMSAdminController;
 use App\Http\Controllers\Api\V1\Admin\CouponAdminController;
+use App\Http\Controllers\Api\V1\Admin\AdminNotificationController;
 use App\Http\Controllers\Api\V1\Admin\EmailNotificationAdminController;
 use App\Http\Controllers\Api\V1\Admin\InventoryController;
 use App\Http\Controllers\Api\V1\Admin\OfferAdminController;
@@ -298,4 +299,9 @@ Route::middleware(['auth:sanctum', 'admin.access'])->prefix('admin')->group(func
     Route::get('/settings/email-notifications', [EmailNotificationAdminController::class, 'index']);
     Route::put('/settings/email-notifications', [EmailNotificationAdminController::class, 'update']);
     Route::post('/settings/email-notifications/test', [EmailNotificationAdminController::class, 'testConnection']);
+
+    // Admin In-App Store Notifications
+    Route::get('/notifications', [AdminNotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [AdminNotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllRead']);
 });

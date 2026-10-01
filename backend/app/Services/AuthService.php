@@ -24,7 +24,7 @@ class AuthService
 
         $token = $user->createToken('customer_auth_token')->plainTextToken;
 
-        // Dispatch Welcome Email Notification Job asynchronously
+        // Dispatch Welcome Email Notification Job & create store notification
         try {
             \App\Jobs\SendEmailNotificationJob::dispatch(
                 'welcome_email',
@@ -32,8 +32,15 @@ class AuthService
                 $user->name,
                 ['customer_name' => $user->name, 'user' => $user->toArray()]
             );
+
+            \App\Models\Notification::createNotification(
+                'New Customer Registered',
+                "{$user->name} ({$user->email}) created a new account on Femmeera Store.",
+                'user',
+                '/dashboard/customers'
+            );
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning("AuthService: Failed to queue welcome email for {$user->email}: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::warning("AuthService: Failed to queue welcome notification for {$user->email}: " . $e->getMessage());
         }
 
         return [

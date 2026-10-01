@@ -214,12 +214,20 @@ class PaymentService
                     );
                 }
 
-                // 3. Admin Alert: New Order Placed
-                $adminEmail = env('ADMIN_NOTIFICATION_EMAIL', env('MAIL_FROM_ADDRESS', 'admin@femmeera.com'));
+                // 3. Store In-App Notification: Payment Verified & Order Confirmed
+                \App\Models\Notification::createNotification(
+                    'Payment Confirmed',
+                    "Payment verified for Order #{$order->order_number} (₹" . number_format($payment->amount, 2) . ").",
+                    'payment',
+                    '/dashboard/orders'
+                );
+
+                // 4. Admin Alert: New Order Placed
+                $adminEmail = env('ADMIN_NOTIFICATION_EMAIL', 'myfemmeera@gmail.com');
                 \App\Jobs\SendEmailNotificationJob::dispatch(
                     'admin_new_order',
                     $adminEmail,
-                    'Admin Concierge',
+                    'Femmeera Admin Concierge',
                     ['order' => $orderData]
                 );
             } catch (\Throwable $ex) {
